@@ -27,6 +27,7 @@ public class Initialize {
 				Plugins.getMissingPlugins(load.ConvertToMap(jmeterJson), props);
 				
 			}else {
+				LOGGER.info("Failed to connect to Internet, Check your Internet settings..");
 				System.exit(1);
 			}
 		}
