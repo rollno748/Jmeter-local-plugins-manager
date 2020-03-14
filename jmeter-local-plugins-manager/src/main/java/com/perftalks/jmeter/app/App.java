@@ -30,8 +30,11 @@ public class App {
 		if (DirOps.createDir(props.getProperty("local.repo.plugins.path"))) {
 			JSONArray jmeterJson = HTTPRequests.get(props.getProperty("jmeter.repo.url"));
 			if (!jmeterJson.isEmpty()) {
-				LOGGER.info("Checking available plugins");
+				LOGGER.info("Plugins sync started");
 				plugins.downloadMissingPlugins(load.ConvertToMap(jmeterJson));		
+				LOGGER.info("Updating Plugins Json for DI-Internal");
+				plugins.UpdateJsonPluginsInfo(jmeterJson, props);
+				LOGGER.info("Plugins sync completed");
 			} else {
 				LOGGER.info("Failed to connect to Internet, Check your Internet settings..");
 				System.exit(1);

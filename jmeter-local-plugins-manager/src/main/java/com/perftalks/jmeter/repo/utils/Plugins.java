@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.logging.Logger;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import com.perftalks.jmeter.repo.rest.HTTPRequests;
@@ -100,16 +101,6 @@ public class Plugins {
 		LOGGER.info("Plugins update completed");
 	}
 
-	public static void getPluginUpdatesInfo(HashMap<String, JSONObject> hmap, Properties props)
-			throws MalformedURLException, IOException {
-
-		LOGGER.info("Retrieving Plugins updates");
-
-		LOGGER.info("Found " + missingPluginsList.size() + " new plugins which is missing from local repository");
-		getMissingPlugins(hmap, missingPluginsList);
-		// checkPluginsUpdate(hmap);
-
-	}
 
 	public static void DownloadPlugins(String pluginName, JSONObject jObj) throws MalformedURLException, IOException {
 
@@ -123,8 +114,7 @@ public class Plugins {
 			if (!new File(filePath).exists()) {
 				DirOps.createDir(filePath);
 			}
-			// Print key and value
-			// System.out.println("key: " + keyStr + " value: " + pluginObj);
+			
 			getPlugins(filePath, pluginObj);
 
 		}
@@ -159,6 +149,15 @@ public class Plugins {
 			}
 		}
 
+	}
+
+	public void UpdateJsonPluginsInfo(JSONArray jmeterJson, Properties props) throws IOException {
+		JSONArray modifiedJsonArray = new JSONArray();
+		
+		modifiedJsonArray = PluginsFileWriter.getModifiedJson(jmeterJson, props);
+		PluginsFileWriter.createJSON(modifiedJsonArray, props);
+		LOGGER.info("The Plugins JSON can be viewed here : "+ "http://" + props.getProperty("repo.hostname")+ props.getProperty("repo.hostname.path") + "/plugins.json");
+		
 	}
 
 }
