@@ -14,22 +14,28 @@ import java.nio.charset.Charset;
 import java.util.logging.Logger;
 
 import org.json.JSONArray;
-import org.json.JSONObject;
 
 public class HTTPRequests {
-	
+
 	private static final Logger LOGGER = Logger.getLogger(HTTPRequests.class.getName());
-	
+	private static JSONArray jsonArr = null;
+	private static InputStream is = null;
+	private static File file;
+
 	public static JSONArray get(String url) throws MalformedURLException, IOException {
-		InputStream is = new URL(url).openStream();
 		try {
+			is = new URL(url).openStream();
 			BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
 			String jsonText = readAll(rd);
-			JSONArray jsonArr = new JSONArray(jsonText);
-			return jsonArr;
+			jsonArr = new JSONArray(jsonText);
+
+		} catch (Exception e) {
+			e.printStackTrace();
 		} finally {
 			is.close();
 		}
+
+		return jsonArr;
 	}
 
 	private static String readAll(Reader rd) throws IOException {
@@ -41,12 +47,13 @@ public class HTTPRequests {
 		return sb.toString();
 	}
 
-
-	public static void DownloadPlugins(URL url, File file) throws MalformedURLException, IOException {
+	
+	public static void Downloader(String filePath, URL url) throws MalformedURLException, IOException {
 
 		int respCode = getResponseCode(url);
+		file = new File (filePath + url.toString().substring(url.toString().lastIndexOf("/")));
 
-		if(respCode == 200) {
+		if (respCode == 200) {
 
 			try {
 				InputStream input = url.openStream();
@@ -74,30 +81,20 @@ public class HTTPRequests {
 				input.close();
 				output.close();
 
-				LOGGER.info( file + " downloaded successfully!");
-			}
-			catch(IOException ioEx) {
+				LOGGER.info(file + " downloaded successfully!");
+			} catch (IOException ioEx) {
 				ioEx.printStackTrace();
-			}			
-		}			
+			}
+		}
 	}
+	
 
 	public static int getResponseCode(URL url) throws MalformedURLException, IOException {
 
-		HttpURLConnection huc =  (HttpURLConnection)  url.openConnection(); 
-		huc.setRequestMethod("GET"); 
-		huc.connect(); 
+		HttpURLConnection huc = (HttpURLConnection) url.openConnection();
+		huc.setRequestMethod("GET");
+		huc.connect();
 		return huc.getResponseCode();
 	}
-
-	public static void DownloadPlugins(JSONObject jObj) throws MalformedURLException, IOException {
-		
-	
-		
-		
-		
-	}
-
-
 
 }

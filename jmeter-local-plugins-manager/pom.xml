@@ -26,6 +26,7 @@
 			<artifactId>jackson-mapper-asl</artifactId>
 			<version>${org-json-version}</version>
 		</dependency>
+
 	</dependencies>
 
 	<build>
