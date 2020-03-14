@@ -19,7 +19,7 @@ public class DirOps {
 			try {
 				file.mkdirs();
 				if(file.exists()) {
-					LOGGER.info("Local Plugin directory not found, Created new direcoty" + file.toString());
+					LOGGER.info("Local Plugin directory not found, Created new direcoty " + file.toString());
 					status=true;
 				}				
 			}catch(Exception e){

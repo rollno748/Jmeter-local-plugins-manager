@@ -31,27 +31,11 @@ public class App {
 			JSONArray jmeterJson = HTTPRequests.get(props.getProperty("jmeter.repo.url"));
 			if (!jmeterJson.isEmpty()) {
 				LOGGER.info("Checking available plugins");
-				plugins.downloadMissingPlugins(load.ConvertToMap(jmeterJson));
-				
+				plugins.downloadMissingPlugins(load.ConvertToMap(jmeterJson));		
 			} else {
 				LOGGER.info("Failed to connect to Internet, Check your Internet settings..");
 				System.exit(1);
 			}
 		}
-
 	}
 }
-
-
-/*
-for (Object libKey : libObject.keySet()) {
-
-libPath = props.getProperty("local.repo.lib.path") + libKey.toString();
-
-if (! new File("libPath").exists()) {
-	DirOps.createDir(libPath);
-	getDependencies(libPath, libObject);
-}
-}
-
-*/
