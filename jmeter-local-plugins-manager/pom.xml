@@ -21,12 +21,6 @@
 			<artifactId>json</artifactId>
 			<version>${jackson-mapper-version}</version>
 		</dependency>
-		<dependency>
-			<groupId>org.codehaus.jackson</groupId>
-			<artifactId>jackson-mapper-asl</artifactId>
-			<version>${org-json-version}</version>
-		</dependency>
-
 	</dependencies>
 
 	<build>
