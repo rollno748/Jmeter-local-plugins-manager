@@ -1,10 +1,12 @@
 package com.perftalks.jmeter.repo.utils;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
-
 
 public class Parser {
 
@@ -32,6 +34,11 @@ public class Parser {
 		}
 
 		return jmeterRepoList;
+	}
+
+
+	public static String encodeUrl(String keey) throws UnsupportedEncodingException {
+		return URLEncoder.encode(keey, StandardCharsets.UTF_8.toString());
 	}
 
 }

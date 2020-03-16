@@ -104,7 +104,7 @@ public class Plugins {
 
 	public static void DownloadPlugins(String pluginName, JSONObject jObj) throws MalformedURLException, IOException {
 
-		LOGGER.info(jObj.toString());
+		//LOGGER.info(jObj.toString());
 		for (Object key : jObj.keySet()) {
 			// based on key types
 			String keyStr = (String) key;
@@ -156,7 +156,7 @@ public class Plugins {
 		
 		modifiedJsonArray = PluginsFileWriter.getModifiedJson(jmeterJson, props);
 		PluginsFileWriter.createJSON(modifiedJsonArray, props);
-		LOGGER.info("The Plugins JSON can be viewed here : "+ "http://" + props.getProperty("repo.hostname")+ props.getProperty("repo.hostname.path") + "/plugins.json");
+		LOGGER.info("The Plugins JSON can be viewed here : "+ "http://" + props.getProperty("repo.hostname") + "/prjoects/di-repo" + "/plugins.json");
 		
 	}
 

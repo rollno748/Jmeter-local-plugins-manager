@@ -5,8 +5,8 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.util.Properties;
 
-public class DemoMain {
-	
+public class AppRunner {
+
 	private static Properties props = new Properties();
 
 	public static void main(String[] args) throws MalformedURLException, IOException {
@@ -19,9 +19,7 @@ public class DemoMain {
 		}
 
 		if (!props.isEmpty()) {
-			System.out.println("Starting Local Plugins Manager");
 			new App(props).execute();
-			
 		}
 
 	}
