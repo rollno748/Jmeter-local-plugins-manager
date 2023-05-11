@@ -2,19 +2,32 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>com.perftalks.jmeter.pluginsmanager</groupId>
+	<groupId>io.perfwise.local.pluginsmanager</groupId>
 	<artifactId>jmeter-local-plugins-manager</artifactId>
 	<version>2.0</version>
+
 	<properties>
-		<log-4j-version>2.8.2</log-4j-version>
+		<log4j-version>2.17.2</log4j-version>
+		<spark-java>2.9.4</spark-java>
+		<gson-version>2.8.9</gson-version>
 		<jackson-mapper-version>LATEST</jackson-mapper-version>
-		<org-json-version>1.9.11</org-json-version>
 	</properties>
+
 	<dependencies>
 		<dependency>
 			<groupId>org.apache.logging.log4j</groupId>
 			<artifactId>log4j-slf4j-impl</artifactId>
-			<version>${log-4j-version}</version>
+			<version>${log4j-version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.sparkjava</groupId>
+			<artifactId>spark-core</artifactId>
+			<version>${spark-java}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.google.code.gson</groupId>
+			<artifactId>gson</artifactId>
+			<version>${gson-version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.json</groupId>
@@ -34,21 +47,25 @@
 		</resources>
 		<plugins>
 			<plugin>
-				<!-- Build an executable JAR -->
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-jar-plugin</artifactId>
-				<version>3.1.0</version>
+				<version>3.3.0</version>
 				<configuration>
 					<archive>
 						<manifest>
 							<addClasspath>true</addClasspath>
 							<classpathPrefix>lib/</classpathPrefix>
-							<mainClass>com.perftalks.jmeter.app.PluginsManager</mainClass>
+							<mainClass>io.perfwise.local.pluginsmanager</mainClass>
 						</manifest>
 					</archive>
-					<descriptorRefs>
-						<descriptorRef>jar-with-dependencies</descriptorRef>
-					</descriptorRefs>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<source>8</source>
+					<target>8</target>
 				</configuration>
 			</plugin>
 		</plugins>
