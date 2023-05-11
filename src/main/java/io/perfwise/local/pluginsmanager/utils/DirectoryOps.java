@@ -9,7 +9,6 @@ public class DirectoryOps {
 
     private boolean createDirectory(String dirPath){
         boolean status = false;
-
         File file = new File(dirPath);
 
         if(!file.exists()) {

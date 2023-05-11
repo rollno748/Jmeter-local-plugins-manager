@@ -7,26 +7,26 @@ import org.slf4j.LoggerFactory;
 import java.net.InetAddress;
 import java.util.Properties;
 
-import static spark.Spark.init;
-import static spark.Spark.port;
-import static spark.Spark.get;
+import static spark.Spark.*;
+import static spark.Spark.path;
 
 public class RestController {
     private static final Logger LOGGER = LoggerFactory.getLogger(RestController.class);
-    private Properties props;
+    private static String uriPath;
+    private static int serverPort;
     public RestController() {
     }
     public RestController(Properties props) {
-        this.props = props;
+        RestController.serverPort = Integer.parseInt(props.getProperty("server.port"));
+        RestController.uriPath = props.getProperty("server.uri.path");
     }
 
     public void startRestServer() {
-
-        int serverPort = Integer.parseInt(props.getProperty("server.port"));
-        String uriPath = props.getProperty("server.uri.path");
         try {
             port(serverPort);
             init();
+            awaitInitialization();
+            loadRestApiServices();
             LOGGER.info(String.format("Local Plugins manager - REST services started :: http://%s:%s%s/",
                     InetAddress.getLocalHost().getHostAddress(), serverPort, uriPath));
         } catch (Exception e) {
@@ -39,8 +39,13 @@ public class RestController {
     }
 
     public static void loadRestApiServices() {
-        LOGGER.info("Loading REST Services");
-        get("/", (request, response) ->  "Hello World");
+        path(uriPath, () -> {
+            before("/*", (q, a) -> LOGGER.debug("Received api call"));
+
+            get("/greet", (req, res) -> {
+                return "Hello Work !";
+            });
+        });
     }
 
 }
