@@ -7,7 +7,7 @@ import java.util.logging.Logger;
 public class DirectoryOps {
     private static final Logger LOGGER = Logger.getLogger(DirectoryOps.class.getName());
 
-    private boolean createDirectory(String dirPath){
+    public boolean createDirectory(String dirPath){
         boolean status = false;
         File file = new File(dirPath);
 

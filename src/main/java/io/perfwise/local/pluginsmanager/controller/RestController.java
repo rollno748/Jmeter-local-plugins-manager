@@ -27,7 +27,7 @@ public class RestController {
             init();
             awaitInitialization();
             loadRestApiServices();
-            LOGGER.info(String.format("Local Plugins manager - REST services started :: http://%s:%s%s/",
+            LOGGER.debug(String.format("Local Plugins manager - REST services started :: http://%s:%s%s/",
                     InetAddress.getLocalHost().getHostAddress(), serverPort, uriPath));
         } catch (Exception e) {
             LOGGER.error("Local Plugins manager - REST services failed to start", e);
