@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.sql.SQLException;
 import java.util.Timer;
 import java.util.Properties;
 
@@ -40,7 +41,7 @@ public class LocalPluginsManager {
             LOGGER.info("Properties load :: Success");
 
             if (!props.isEmpty()) {
-                if(new PreCheckValidation(props).validateDirectoryPresence()){
+                if(new PreCheckValidation(props).validate()){
                     timer.schedule(new ScheduledTasks(props), 0, Long.parseLong(props.getProperty("scheduler.interval")));
                     new RestController(props).startRestServer();
                 }else{
@@ -50,6 +51,8 @@ public class LocalPluginsManager {
         } catch (IOException e) {
             e.printStackTrace();
             RestController.stopRestServer();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
         }
     }
 }

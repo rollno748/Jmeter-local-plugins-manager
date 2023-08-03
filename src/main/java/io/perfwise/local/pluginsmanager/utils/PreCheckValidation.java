@@ -1,8 +1,11 @@
 package io.perfwise.local.pluginsmanager.utils;
 
+import io.perfwise.local.pluginsmanager.sqlite.SQLiteConnectionPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.Properties;
 
 public class PreCheckValidation {
@@ -15,6 +18,7 @@ public class PreCheckValidation {
         this.props = props;
         this.directoryOps = new DirectoryOps();
     }
+
     public boolean validateDirectoryPresence() {
         String pluginsPath = props.getProperty("local.repo.plugins.dir.path");
         if(pluginsPath == null || pluginsPath.isEmpty()) {
@@ -40,6 +44,29 @@ public class PreCheckValidation {
         }else{
             LOGGER.error("Failed to create local plugins directory");
             return false;
+        }
+    }
+
+    public boolean validate() throws SQLException {
+        if (validateDirectoryPresence()){
+            createLocalDatabase();
+            return true;
+        }else {
+            return false;
+        }
+    }
+
+    private void createLocalDatabase() throws SQLException {
+        Connection conn = null;
+        try{
+            conn = SQLiteConnectionPool.validateDatabase(props.getProperty("local.sqlite.db.path"));
+            LOGGER.info("Database Created ");
+        }catch(SQLException sqle){
+            LOGGER.error("Exception occurred while creating DB :: %S", sqle);
+        }finally {
+            if(conn != null){
+                conn.close();
+            }
         }
     }
 }
