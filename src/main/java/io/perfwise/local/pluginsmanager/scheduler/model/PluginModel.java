@@ -2,8 +2,6 @@ package io.perfwise.local.pluginsmanager.scheduler.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.util.Map;
-
 public class PluginModel {
 
     @JsonProperty("description")
@@ -27,11 +25,10 @@ public class PluginModel {
     @JsonProperty("vendor")
     private String vendor;
 
-    @JsonProperty("versions")
-    private Map<String, Version> versions;
+    @JsonProperty("versions_count")
+    private int versions;
 
     // Getter and Setter methods
-
     public String getDescription() {
         return description;
     }
@@ -85,50 +82,58 @@ public class PluginModel {
         this.vendor = vendor;
     }
 
-    public Map<String, Version> getVersions() {
+    public int getVersions() {
         return versions;
     }
 
-    public void setVersions(Map<String, Version> versions) {
+    public void setVersions(int versions) {
         this.versions = versions;
     }
-
-    public static class Version {
-        @JsonProperty("depends")
-        private String[] depends;
-
-        @JsonProperty("downloadUrl")
-        private String downloadUrl;
-
-        @JsonProperty("changes")
-        private String changes;
-
-        // Getter and Setter methods
-
-        public String[] getDepends() {
-            return depends;
-        }
-
-        public void setDepends(String[] depends) {
-            this.depends = depends;
-        }
-
-        public String getDownloadUrl() {
-            return downloadUrl;
-        }
-
-        public void setDownloadUrl(String downloadUrl) {
-            this.downloadUrl = downloadUrl;
-        }
-
-        public String getChanges() {
-            return changes;
-        }
-
-        public void setChanges(String changes) {
-            this.changes = changes;
-        }
-    }
-
-
 }
+
+
+
+//    public Map<String, Version> getVersions() {
+//        return versions;
+//    }
+//
+//    public void setVersions(Map<String, Version> versions) {
+//        this.versions = versions;
+//    }
+//
+//    public static class Version {
+//        @JsonProperty("depends")
+//        private String[] depends;
+//
+//        @JsonProperty("downloadUrl")
+//        private String downloadUrl;
+//
+//        @JsonProperty("changes")
+//        private String changes;
+//
+//        // Getter and Setter methods
+//
+//        public String[] getDepends() {
+//            return depends;
+//        }
+//
+//        public void setDepends(String[] depends) {
+//            this.depends = depends;
+//        }
+//
+//        public String getDownloadUrl() {
+//            return downloadUrl;
+//        }
+//
+//        public void setDownloadUrl(String downloadUrl) {
+//            this.downloadUrl = downloadUrl;
+//        }
+//
+//        public String getChanges() {
+//            return changes;
+//        }
+//
+//        public void setChanges(String changes) {
+//            this.changes = changes;
+//        }
+//    }

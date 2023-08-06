@@ -7,21 +7,38 @@ import java.io.File;
 import java.sql.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 public class SQLiteConnectionPool {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(SQLiteConnectionPool.class);
-    private String DB_FILE_PATH;
+    private static final int DEFAULT_MIN_POOL_SIZE = 5;
+    private static final int DEFAULT_MAX_POOL_SIZE = 20;
+    private static final int DEFAULT_TIMEOUT_SECONDS = 5;
+
+    private static SQLiteConnectionPool instance;
+    private static String DB_FILE_PATH;
     private static String PLUGINS_METADATA = "CREATE TABLE metadata (id TEXT PRIMARY KEY, versions TEXT(1000000))";
     private static String PLUGINS_INFO = "CREATE TABLE plugins (id TEXT PRIMARY KEY, name TEXT, description TEXT, helpUrl TEXT, markerClass TEXT, screenshotUrl TEXT, vendor TEXT, versions_count INTEGER)";
+    private static int minPoolSize;
+    private static int maxPoolSize;
+    private static int timeoutSeconds;
+    private static BlockingQueue<Connection> connections;
 
-    private final BlockingQueue<Connection> connections;
+    private SQLiteConnectionPool(String dbPath) {
+        this(dbPath, DEFAULT_MIN_POOL_SIZE, DEFAULT_MAX_POOL_SIZE, DEFAULT_TIMEOUT_SECONDS);
+    }
 
-    public SQLiteConnectionPool(int poolSize) {
-        connections = new ArrayBlockingQueue<>(poolSize);
+    private SQLiteConnectionPool(String dbPath, int minPoolSize, int maxPoolSize, int timeoutSeconds) {
+        SQLiteConnectionPool.minPoolSize = minPoolSize;
+        SQLiteConnectionPool.maxPoolSize = maxPoolSize;
+        SQLiteConnectionPool.timeoutSeconds = timeoutSeconds;
+        SQLiteConnectionPool.DB_FILE_PATH = dbPath + ".metadata.db";
+        connections = new ArrayBlockingQueue<>(maxPoolSize);
 
-        for (int i = 0; i < poolSize; i++) {
+        for (int i = 0; i < maxPoolSize; i++) {
             try {
-                Connection connection = DriverManager.getConnection("jdbc:sqlite:mydb.sqlite");
+                Connection connection = createConnection(SQLiteConnectionPool.getDB_FILE_PATH());
                 connections.add(connection);
             } catch (SQLException e) {
                 throw new RuntimeException(e);
@@ -29,29 +46,40 @@ public class SQLiteConnectionPool {
         }
     }
 
-    public SQLiteConnectionPool(String dbPath, int poolSize){
-        this.DB_FILE_PATH = dbPath;
-        connections = new ArrayBlockingQueue<>(poolSize);
-
-        for (int i = 0; i < poolSize; i++) {
-            try {
-                Connection connection = DriverManager.getConnection("jdbc:sqlite:mydb.sqlite");
-                connections.add(connection);
-            } catch (SQLException e) {
-                throw new RuntimeException(e);
-            }
-        }
+    private static Connection createConnection(String dbPath) throws SQLException {
+        return DriverManager.getConnection("jdbc:sqlite:" + dbPath);
     }
 
-    public Connection getConnection() throws InterruptedException {
-        return connections.take();
+    public static synchronized SQLiteConnectionPool getInstance(String dbPath, int minPoolSize, int maxPoolSize, int timeoutSeconds) {
+        if (instance == null) {
+            instance = new SQLiteConnectionPool(dbPath, minPoolSize, maxPoolSize, timeoutSeconds);
+        }
+        return instance;
+    }
+
+    public static Connection getConnection() throws InterruptedException, SQLException {
+        Connection connection = connections.poll(getTimeoutSeconds(), TimeUnit.SECONDS);
+        if (connection == null) {
+            if (connections.size() < getMaxPoolSize()) {
+                connection = createConnection(getDB_FILE_PATH());
+            } else {
+                throw new RuntimeException("Connection pool timeout");
+            }
+        }
+        return connection;
     }
 
     public void releaseConnection(Connection connection) {
-        try {
-            connections.put(connection);
-        } catch (InterruptedException e) {
-            // Ignore
+        if (connection != null) {
+            if (!connections.contains(connection) && connections.size() < maxPoolSize) {
+                connections.offer(connection);
+            } else {
+                try {
+                    connection.close();
+                } catch (SQLException e) {
+                    // Ignore
+                }
+            }
         }
     }
 
@@ -63,6 +91,7 @@ public class SQLiteConnectionPool {
                 // Ignore
             }
         }
+        connections.clear();
     }
 
     public static Connection validateDatabase(String dbPath) throws SQLException {
@@ -104,5 +133,37 @@ public class SQLiteConnectionPool {
             }
         }
         return connection;
+    }
+
+    public static String getDB_FILE_PATH() {
+        return DB_FILE_PATH;
+    }
+
+    public static void setDB_FILE_PATH(String DB_FILE_PATH) {
+        SQLiteConnectionPool.DB_FILE_PATH = DB_FILE_PATH;
+    }
+
+    public static int getMinPoolSize() {
+        return minPoolSize;
+    }
+
+    public static void setMinPoolSize(int minPoolSize) {
+        SQLiteConnectionPool.minPoolSize = minPoolSize;
+    }
+
+    public static int getMaxPoolSize() {
+        return maxPoolSize;
+    }
+
+    public static void setMaxPoolSize(int maxPoolSize) {
+        SQLiteConnectionPool.maxPoolSize = maxPoolSize;
+    }
+
+    public static int getTimeoutSeconds() {
+        return timeoutSeconds;
+    }
+
+    public static void setTimeoutSeconds(int timeoutSeconds) {
+        SQLiteConnectionPool.timeoutSeconds = timeoutSeconds;
     }
 }

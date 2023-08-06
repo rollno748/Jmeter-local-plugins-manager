@@ -42,8 +42,8 @@ public class LocalPluginsManager {
 
             if (!props.isEmpty()) {
                 if(new PreCheckValidation(props).validate()){
-                    timer.schedule(new ScheduledTasks(props), 0, Long.parseLong(props.getProperty("scheduler.interval")));
                     new RestController(props).startRestServer();
+                    timer.schedule(new ScheduledTasks(props), 0, Long.parseLong(props.getProperty("scheduler.interval")));
                 }else{
                     throw new IOException("Failed to create directories, verify the location permissions in config file");
                 }

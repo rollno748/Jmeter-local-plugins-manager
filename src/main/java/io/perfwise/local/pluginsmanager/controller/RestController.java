@@ -1,35 +1,42 @@
 package io.perfwise.local.pluginsmanager.controller;
 
-import com.google.gson.Gson;
-import spark.Spark;
+import io.perfwise.local.pluginsmanager.sqlite.SQLiteConnectionPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import spark.Spark;
+import spark.staticfiles.StaticFilesConfiguration;
+import spark.utils.ClassUtils;
 
-import java.io.File;
 import java.net.InetAddress;
 import java.util.Properties;
 
 import static spark.Spark.*;
-import static spark.Spark.path;
 
 public class RestController {
     private static final Logger LOGGER = LoggerFactory.getLogger(RestController.class);
     private static String uriPath;
     private int serverPort;
+    private int MIN_THREADS = 2;
+    private int MAX_THREADS = 10;
+    private int TIMEOUT = 30000;
     private String fileServerLocation;
+    private SQLiteConnectionPool connectionPool;
 
     public RestController() {
     }
     public RestController(Properties props) {
         this.serverPort = Integer.parseInt(props.getProperty("server.port"));
-        RestController.uriPath = props.getProperty("server.uri.path");
+        uriPath = props.getProperty("server.uri.path");
         this.fileServerLocation = props.getProperty("local.sqlite.db.path");
     }
 
     public void startRestServer() {
         try {
             port(serverPort);
-            staticFiles.externalLocation(this.fileServerLocation);
+            staticFiles.location("public");
+            connectionPool = SQLiteConnectionPool.getInstance(fileServerLocation, MIN_THREADS, MAX_THREADS, TIMEOUT);
+            staticFiles.location("public");
+//            staticFiles.externalLocation(this.fileServerLocation);
             init();
             awaitInitialization();
             loadRestApiServices();
@@ -40,28 +47,48 @@ public class RestController {
         }
     }
 
-    public static void stopRestServer() {
-        Spark.stop();
-    }
-
     public static void loadRestApiServices() {
-        path(uriPath, () -> {
+        path(RestController.uriPath, () -> {
             before("/*", (req, res) -> {
                 res.header("Access-Control-Allow-Origin", "*");
+                res.type("text/html");
                 LOGGER.debug("Received api call");
 
-            });
-
-            get("/", (req, res) -> {
-                res.type("application/json");
-                File[] files = File.listRoots(); //get array of files
-                return new Gson().toJson(files);
             });
 
             get("/greet", (req, res) -> {
                 return "Hello Work !";
             });
+
+            StaticFilesConfiguration staticFilesConfig = new StaticFilesConfiguration();
+            staticFilesConfig.configure("/public");
+
+//            before("/upload", (request, response) -> {
+//                response.type("text/html");
+//                staticFilesConfig.consume(request.raw(), response.raw());
+//            });
+
+            get("/upload", (req, res) -> {
+                res.type("text/html");
+                res.redirect("/public");
+                halt();
+                return ClassUtils.getDefaultClassLoader().getResourceAsStream("public/upload.html");
+            });
+
         });
     }
 
+    public static void stopRestServer() {
+        Spark.stop();
+    }
+
 }
+
+
+//        Service service = Service.ignite();
+//            service.staticFiles.location("/public");
+//            service.port(serverPort);
+//            service.threadPool(MAX_THREADS, MIN_THREADS, TIMEOUT);
+//            loadRestApiServices(service);
+//            service.init();
+//            service.awaitInitialization();

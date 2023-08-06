@@ -7,6 +7,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Properties;
 import java.util.TimerTask;
@@ -14,40 +16,52 @@ public class ScheduledTasks extends TimerTask {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ScheduledTasks.class);
     private final Properties props;
+    private Parse parser;
+    private Boolean isNewPluginsAvailable;
+    private Boolean isNewPluginVersionAvailable;
 
     public ScheduledTasks(Properties props) {
         this.props = props;
+        this.parser = new Parse(props);
     }
 
     @Override
     public void run() {
         try {
-            JSONArray js = HttpRequest.get(props.getProperty("jmeter.plugins.url"));
-
-            List<String> ls = Parse.getAllPluginsNames(js);
-            System.out.println(ls);
-        } catch (IOException e) {
+            JSONArray pluginsArray = HttpRequest.get(props.getProperty("jmeter.plugins.url"));
+            if(isNewPluginsAvailable(pluginsArray)){
+                List<String> missingPluginsList = parser.getMissingPluginsNames(pluginsArray);
+                this.downloadMissingPlugins(missingPluginsList, pluginsArray);
+            }else if(isNewPluginVersionAvailable(pluginsArray)){
+                this.downloadMissingPluginVersion(pluginsArray);
+            }else{
+                LOGGER.info("Skipping Downloader - No new plugins available");
+            }
+//            List<String> ls = Parse.getAllPluginsNames(pluginsArray);
+//            Boolean isNewPluginsAvailable = this.compareMetaDataInfo(pluginsArray);
+//            System.out.println(pluginsArray);
+        } catch (IOException | SQLException | InterruptedException e) {
             LOGGER.error("Exception occurred while checking with plugins manager");
+            throw new RuntimeException(e);
+        } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }
         LOGGER.debug("Checking for plugin updates from Plugins manager");
     }
+
+    private void downloadMissingPluginVersion(JSONArray pluginsArray) {
+    }
+
+    private void downloadMissingPlugins(List<String> missingPluginsList, JSONArray pluginsArray) {
+
+    }
+
+    private boolean isNewPluginVersionAvailable(JSONArray pluginsArray) {
+
+        return false;
+    }
+
+    private Boolean isNewPluginsAvailable(JSONArray pluginsArray) throws SQLException, InterruptedException {
+        return Parse.validatePluginCount(pluginsArray);
+    }
 }
-
-//    ObjectMapper objectMapper = new ObjectMapper();
-//    PluginModel pluginModel = objectMapper.readValue(js.get(0).toString(), PluginModel.class);
-//
-//            System.out.println("Plugin ID: " + pluginModel.getId());
-//                    System.out.println("Plugin Name: " + pluginModel.getName());
-//                    System.out.println("Plugin Description: " + pluginModel.getDescription());
-//                    System.out.println("Total available versions: "+ pluginModel.getVersions().size());
-//                    // Accessing the "versions" object
-//                    for (Map.Entry<String, PluginModel.Version> entry : pluginModel.getVersions().entrySet()) {
-//        String versionName = entry.getKey();
-//        PluginModel.Version version = entry.getValue();
-//        System.out.println("Version: " + versionName);
-//        System.out.println("Depends: " + String.join(", ", version.getDepends()));
-//        System.out.println("Download URL: " + version.getDownloadUrl());
-//        System.out.println("Changes: " + version.getChanges());
-//        }
-
