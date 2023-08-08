@@ -1,5 +1,6 @@
 package io.perfwise.local.pluginsmanager.scheduler.http;
 
+import io.perfwise.local.pluginsmanager.sqlite.SQLiteConnectionPool;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -15,22 +16,27 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
+import java.net.*;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.Properties;
 
 public class HttpRequest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpRequest.class);
     private static final HttpClient HTTP_CLIENT = HttpClients.createDefault();
-    private static Properties props;
+    private Properties props;
+    private Connection conn;
     private static final int MAX_RETRIES = 10;
     private static final long RETRY_INTERVAL_MS = 60000;
 
     public HttpRequest(Properties props){
         this.props = props;
+        try {
+            this.conn = SQLiteConnectionPool.getConnection();
+        } catch (InterruptedException | SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static JSONArray get(String url) throws IOException {
@@ -56,7 +62,7 @@ public class HttpRequest {
         throw new IOException("Failed to execute HTTP GET request after " + MAX_RETRIES + " retries.");
     }
 
-    public static void fileDownloader(String filePath, URL url) throws IOException, URISyntaxException {
+    public static void fileDownloader(String filePath, URL url) throws IOException {
         int respCode = getResponseCode(url);
         if (respCode == 200) {
             File file = new File(filePath + url.toString().substring(url.toString().lastIndexOf("/")));
@@ -83,30 +89,64 @@ public class HttpRequest {
         return huc.getResponseCode();
     }
 
-    public static void downloadPlugins(JSONObject pluginObject) throws URISyntaxException, IOException {
+    public void downloadPlugins(JSONObject pluginObject) throws URISyntaxException, IOException {
         JSONObject versionObj = pluginObject.getJSONObject("versions");
         for (String version : versionObj.keySet()) {
             JSONObject versionDetails = pluginObject.getJSONObject("versions").getJSONObject(version);
             if(!versionDetails.isNull("downloadUrl")){
                 String downloadUrl = versionDetails.getString("downloadUrl");
-                fileDownloader(getProps().getProperty("local.repo.plugins.dir.path"), new URI(downloadUrl).toURL());
+                fileDownloader(this.getProps().getProperty("local.repo.plugins.dir.path"), new URI(downloadUrl).toURL());
                 if(versionDetails.has("libs")){
                     JSONObject libsObject = versionDetails.getJSONObject("libs");
                     for (String lib : libsObject.keySet()) {
                         String libUrl = libsObject.getString(lib);
-                        fileDownloader(getProps().getProperty("local.repo.dependencies.dir.path"), new URI(libUrl).toURL());
+                        fileDownloader(this.getProps().getProperty("local.repo.dependencies.dir.path"), new URI(libUrl).toURL());
                     }
                 }
             }
+            
+            this.updatePluginInfoInDB(pluginObject);
+
             LOGGER.info("Downloaded {} plugin - version {}", pluginObject.getString("id"), version);
         }
     }
 
-    public static Properties getProps() {
+    private void updatePluginInfoInDB(JSONObject pluginObject) throws URISyntaxException {
+        JSONObject versionObj = pluginObject.getJSONObject("versions");
+        for (String version : versionObj.keySet()) {
+            JSONObject versionDetails = pluginObject.getJSONObject("versions").getJSONObject(version);
+            if(!versionDetails.isNull("downloadUrl")){
+                String downloadUrl = versionDetails.getString("downloadUrl");
+                try {
+                    fileDownloader(this.getProps().getProperty("local.repo.plugins.dir.path"), new URI(downloadUrl).toURL());
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+                if(versionDetails.has("libs")){
+                    JSONObject libsObject = versionDetails.getJSONObject("libs");
+                    for (String lib : libsObject.keySet()) {
+                        String libUrl = libsObject.getString(lib);
+                        try {
+                            fileDownloader(this.getProps().getProperty("local.repo.dependencies.dir.path"), new URI(libUrl).toURL());
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                }
+            }
+
+            this.updatePluginInfoInDB(pluginObject);
+
+            LOGGER.info("Downloaded {} plugin - version {}", pluginObject.getString("id"), version);
+        }
+
+    }
+
+    public Properties getProps() {
         return props;
     }
 
-    public static void setProps(Properties props) {
-        HttpRequest.props = props;
+    public void setProps(Properties props) {
+        this.props = props;
     }
 }

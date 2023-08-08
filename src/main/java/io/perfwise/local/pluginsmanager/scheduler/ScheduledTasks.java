@@ -12,6 +12,7 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Properties;
 import java.util.TimerTask;
+
 public class ScheduledTasks extends TimerTask {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ScheduledTasks.class);

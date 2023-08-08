@@ -16,9 +16,9 @@ public class RestController {
     private static final Logger LOGGER = LoggerFactory.getLogger(RestController.class);
     private static String uriPath;
     private int serverPort;
-    private int MIN_THREADS = 2;
-    private int MAX_THREADS = 10;
-    private int TIMEOUT = 30000;
+    private int MIN_THREADS;
+    private int MAX_THREADS;
+    private int TIMEOUT;
     private String fileServerLocation;
     private SQLiteConnectionPool connectionPool;
 
@@ -28,15 +28,25 @@ public class RestController {
         this.serverPort = Integer.parseInt(props.getProperty("server.port"));
         uriPath = props.getProperty("server.uri.path");
         this.fileServerLocation = props.getProperty("local.sqlite.db.path");
+        this.MIN_THREADS = Integer.parseInt(props.getProperty("db.min.threads"));
+        this.MAX_THREADS = Integer.parseInt(props.getProperty("db.max.threads"));
+        this.TIMEOUT = Integer.parseInt(props.getProperty("db.timeout.secs"));
     }
 
+    /*
+     * This method initialises the RestServer which exposes
+     * 1. HealthCheck
+     * 2. Upload Custom plugin API
+     * 3. FileServer to download plugins
+     * 4. Initialises connection pool manager for SQLite DB
+     */
     public void startRestServer() {
         try {
             port(serverPort);
             staticFiles.location("public");
             connectionPool = SQLiteConnectionPool.getInstance(fileServerLocation, MIN_THREADS, MAX_THREADS, TIMEOUT);
             staticFiles.location("public");
-//            staticFiles.externalLocation(this.fileServerLocation);
+            staticFiles.externalLocation(this.fileServerLocation);
             init();
             awaitInitialization();
             loadRestApiServices();
@@ -47,6 +57,9 @@ public class RestController {
         }
     }
 
+    /*
+     * This method creates URI Path for the Rest services
+     */
     public static void loadRestApiServices() {
         path(RestController.uriPath, () -> {
             before("/*", (req, res) -> {
@@ -63,11 +76,6 @@ public class RestController {
             StaticFilesConfiguration staticFilesConfig = new StaticFilesConfiguration();
             staticFilesConfig.configure("/public");
 
-//            before("/upload", (request, response) -> {
-//                response.type("text/html");
-//                staticFilesConfig.consume(request.raw(), response.raw());
-//            });
-
             get("/upload", (req, res) -> {
                 res.type("text/html");
                 res.redirect("/public");
@@ -83,12 +91,3 @@ public class RestController {
     }
 
 }
-
-
-//        Service service = Service.ignite();
-//            service.staticFiles.location("/public");
-//            service.port(serverPort);
-//            service.threadPool(MAX_THREADS, MIN_THREADS, TIMEOUT);
-//            loadRestApiServices(service);
-//            service.init();
-//            service.awaitInitialization();

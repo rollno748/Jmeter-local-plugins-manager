@@ -12,8 +12,8 @@ import java.util.concurrent.TimeUnit;
 public class SQLiteConnectionPool {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SQLiteConnectionPool.class);
-    private static final int DEFAULT_MIN_POOL_SIZE = 5;
-    private static final int DEFAULT_MAX_POOL_SIZE = 20;
+    private static final int DEFAULT_MIN_POOL_SIZE = 1;
+    private static final int DEFAULT_MAX_POOL_SIZE = 5;
     private static final int DEFAULT_TIMEOUT_SECONDS = 5;
 
     private static SQLiteConnectionPool instance;
