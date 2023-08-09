@@ -20,7 +20,6 @@ public class LocalPluginsManager {
 
     public static void main(String[] args) throws IOException{
         Timer timer = new Timer();
-        RestController restController;
 
         Options options = new Options();
         options.addOption("config", true, "Path to the properties file");

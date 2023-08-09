@@ -60,7 +60,7 @@ public class Parse {
                         }
                     }
                 }else{
-                    downloadAllPlugins(jmeterRepoJson);
+//                    downloadAllPlugins(jmeterRepoJson);
                 }
             } catch (SQLException sqle) {
                 LOGGER.error("Exception occurred while executing query : %s", sqle);

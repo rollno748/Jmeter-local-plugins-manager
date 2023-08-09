@@ -1,11 +1,12 @@
 package io.perfwise.local.pluginsmanager.controller;
 
+import io.perfwise.local.pluginsmanager.service.UploadService;
+import io.perfwise.local.pluginsmanager.service.UploadServiceImpl;
 import io.perfwise.local.pluginsmanager.sqlite.SQLiteConnectionPool;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import spark.Spark;
-import spark.staticfiles.StaticFilesConfiguration;
-import spark.utils.ClassUtils;
 
 import java.net.InetAddress;
 import java.util.Properties;
@@ -43,9 +44,9 @@ public class RestController {
     public void startRestServer() {
         try {
             port(serverPort);
-            staticFiles.location("public");
+            staticFiles.location(System.getProperty("user.dir") + "/src/main/resources/public/");
+//            staticFiles.externalLocation(System.getProperty("user.dir") + "/src/main/resources");
             connectionPool = SQLiteConnectionPool.getInstance(fileServerLocation, MIN_THREADS, MAX_THREADS, TIMEOUT);
-            staticFiles.location("public");
             staticFiles.externalLocation(this.fileServerLocation);
             init();
             awaitInitialization();
@@ -60,28 +61,22 @@ public class RestController {
     /*
      * This method creates URI Path for the Rest services
      */
-    public static void loadRestApiServices() {
+    public void loadRestApiServices() {
+        UploadService uploadService = new UploadServiceImpl();
         path(RestController.uriPath, () -> {
-            before("/*", (req, res) -> {
-                res.header("Access-Control-Allow-Origin", "*");
-                res.type("text/html");
-                LOGGER.debug("Received api call");
-
-            });
+            before("/*", (req, res) -> LOGGER.info("Received api call"));
 
             get("/greet", (req, res) -> {
                 return "Hello Work !";
             });
 
-            StaticFilesConfiguration staticFilesConfig = new StaticFilesConfiguration();
-            staticFilesConfig.configure("/public");
-
-            get("/upload", (req, res) -> {
-                res.type("text/html");
-                res.redirect("/public");
-                halt();
-                return ClassUtils.getDefaultClassLoader().getResourceAsStream("public/upload.html");
+            post("/upload", (req, res) -> {
+                JSONObject jsonObject = new JSONObject(req.body());
+                uploadService.uploadCustomPlugin(jsonObject);
+                return null;
             });
+
+            after((req, res) -> res.header("Content-Encoding", "gzip"));
 
         });
     }

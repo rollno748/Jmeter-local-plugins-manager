@@ -1,4 +1,4 @@
-package io.perfwise.local.pluginsmanager.scheduler.model;
+package io.perfwise.local.pluginsmanager.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
