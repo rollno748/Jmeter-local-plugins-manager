@@ -1,5 +1,7 @@
 package io.perfwise.local.pluginsmanager.scheduler.http;
 
+import com.google.gson.Gson;
+import io.perfwise.local.pluginsmanager.model.PluginModel;
 import io.perfwise.local.pluginsmanager.sqlite.SQLiteConnectionPool;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -16,8 +18,12 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.*;
+import java.net.HttpURLConnection;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Properties;
 
@@ -29,14 +35,10 @@ public class HttpRequest {
     private Connection conn;
     private static final int MAX_RETRIES = 10;
     private static final long RETRY_INTERVAL_MS = 60000;
+    private static String INSERT_PLUGIN_INFO = "INSERT INTO plugins (id, name, type, description, helpUrl, markerClass, screenshotUrl, vendor, versions_count) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
     public HttpRequest(Properties props){
         this.props = props;
-        try {
-            this.conn = SQLiteConnectionPool.getConnection();
-        } catch (InterruptedException | SQLException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     public static JSONArray get(String url) throws IOException {
@@ -92,54 +94,57 @@ public class HttpRequest {
     public void downloadPlugins(JSONObject pluginObject) throws URISyntaxException, IOException {
         JSONObject versionObj = pluginObject.getJSONObject("versions");
         for (String version : versionObj.keySet()) {
-            JSONObject versionDetails = pluginObject.getJSONObject("versions").getJSONObject(version);
-            if(!versionDetails.isNull("downloadUrl")){
-                String downloadUrl = versionDetails.getString("downloadUrl");
+            JSONObject verObj = versionObj.getJSONObject(version);
+            if(!verObj.isNull("downloadUrl")){
+                String downloadUrl = verObj.getString("downloadUrl");
                 fileDownloader(this.getProps().getProperty("local.repo.plugins.dir.path"), new URI(downloadUrl).toURL());
-                if(versionDetails.has("libs")){
-                    JSONObject libsObject = versionDetails.getJSONObject("libs");
+
+               if(verObj.has("libs")){
+                    JSONObject libsObject = verObj.getJSONObject("libs");
                     for (String lib : libsObject.keySet()) {
                         String libUrl = libsObject.getString(lib);
                         fileDownloader(this.getProps().getProperty("local.repo.dependencies.dir.path"), new URI(libUrl).toURL());
                     }
                 }
             }
-            
-            this.updatePluginInfoInDB(pluginObject);
-
+            this.updatePluginInfoInDB(pluginObject, "public");
             LOGGER.info("Downloaded {} plugin - version {}", pluginObject.getString("id"), version);
         }
     }
 
-    private void updatePluginInfoInDB(JSONObject pluginObject) throws URISyntaxException {
+    private void updatePluginInfoInDB(JSONObject pluginObject, String type) {
         JSONObject versionObj = pluginObject.getJSONObject("versions");
-        for (String version : versionObj.keySet()) {
-            JSONObject versionDetails = pluginObject.getJSONObject("versions").getJSONObject(version);
-            if(!versionDetails.isNull("downloadUrl")){
-                String downloadUrl = versionDetails.getString("downloadUrl");
-                try {
-                    fileDownloader(this.getProps().getProperty("local.repo.plugins.dir.path"), new URI(downloadUrl).toURL());
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-                if(versionDetails.has("libs")){
-                    JSONObject libsObject = versionDetails.getJSONObject("libs");
-                    for (String lib : libsObject.keySet()) {
-                        String libUrl = libsObject.getString(lib);
-                        try {
-                            fileDownloader(this.getProps().getProperty("local.repo.dependencies.dir.path"), new URI(libUrl).toURL());
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                    }
-                }
+        int versionsCount = pluginObject.getJSONObject("versions").length();
+        pluginObject.remove("versions");
+        pluginObject.put("versions_count", versionsCount);
+        PluginModel pluginModel = new Gson().fromJson(String.valueOf(pluginObject), PluginModel.class);
+
+        try{
+            if(conn == null){
+                conn = SQLiteConnectionPool.getConnection();
             }
 
-            this.updatePluginInfoInDB(pluginObject);
+            PreparedStatement preparedStatement = conn.prepareStatement(INSERT_PLUGIN_INFO);
+            preparedStatement.setString(1, pluginModel.getId());
+            preparedStatement.setString(2, pluginModel.getName());
+            preparedStatement.setString(3, type);
+            preparedStatement.setString(4, pluginModel.getDescription());
+            preparedStatement.setString(5, pluginModel.getHelpUrl());
+            preparedStatement.setString(6, pluginModel.getMarkerClass());
+            preparedStatement.setString(7, pluginModel.getScreenshotUrl());
+            preparedStatement.setString(8, pluginModel.getVendor());
+            preparedStatement.setInt(9, pluginModel.getVersions_count());
 
-            LOGGER.info("Downloaded {} plugin - version {}", pluginObject.getString("id"), version);
+            int rowsInserted = preparedStatement.executeUpdate();
+            if (rowsInserted > 0) {
+                System.out.println("Data inserted successfully!");
+            } else {
+                System.out.println("Failed to insert data.");
+            }
+            preparedStatement.close();
+        }catch (SQLException | InterruptedException e){
+            e.printStackTrace();
         }
-
     }
 
     public Properties getProps() {

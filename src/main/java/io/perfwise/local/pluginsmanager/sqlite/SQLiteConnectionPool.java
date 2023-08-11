@@ -3,7 +3,6 @@ package io.perfwise.local.pluginsmanager.sqlite;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.sql.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -15,11 +14,12 @@ public class SQLiteConnectionPool {
     private static final int DEFAULT_MIN_POOL_SIZE = 1;
     private static final int DEFAULT_MAX_POOL_SIZE = 5;
     private static final int DEFAULT_TIMEOUT_SECONDS = 5;
-
+    private static final Object lock = new Object();
     private static SQLiteConnectionPool instance;
     private static String DB_FILE_PATH;
-    private static String PLUGINS_METADATA = "CREATE TABLE metadata (id TEXT PRIMARY KEY, versions TEXT(1000000))";
-    private static String PLUGINS_INFO = "CREATE TABLE plugins (id TEXT PRIMARY KEY, name TEXT, description TEXT, helpUrl TEXT, markerClass TEXT, screenshotUrl TEXT, vendor TEXT, versions_count INTEGER)";
+    private static final String DBFILENAME = "plugins.db";
+    private static final String PLUGINS_METADATA = "CREATE TABLE metadata (id TEXT PRIMARY KEY, versions TEXT(1000000))";
+    private static final String PLUGINS_INFO = "CREATE TABLE plugins (id TEXT PRIMARY KEY, name TEXT, type TEXT, description TEXT, helpUrl TEXT, markerClass TEXT, screenshotUrl TEXT, vendor TEXT, versions_count INTEGER)";
     private static int minPoolSize;
     private static int maxPoolSize;
     private static int timeoutSeconds;
@@ -30,10 +30,10 @@ public class SQLiteConnectionPool {
     }
 
     private SQLiteConnectionPool(String dbPath, int minPoolSize, int maxPoolSize, int timeoutSeconds) {
-        SQLiteConnectionPool.minPoolSize = minPoolSize;
-        SQLiteConnectionPool.maxPoolSize = maxPoolSize;
-        SQLiteConnectionPool.timeoutSeconds = timeoutSeconds;
-        SQLiteConnectionPool.DB_FILE_PATH = dbPath + ".metadata.db";
+        setMinPoolSize(minPoolSize);
+        setMaxPoolSize(maxPoolSize);
+        setTimeoutSeconds(timeoutSeconds);
+        setDB_FILE_PATH(dbPath + DBFILENAME);
         connections = new ArrayBlockingQueue<>(maxPoolSize);
 
         for (int i = 0; i < maxPoolSize; i++) {
@@ -69,18 +69,37 @@ public class SQLiteConnectionPool {
         return connection;
     }
 
-    public void releaseConnection(Connection connection) {
+    public static void releaseConnection(Connection connection) {
         if (connection != null) {
-            if (!connections.contains(connection) && connections.size() < maxPoolSize) {
-                connections.offer(connection);
-            } else {
+            synchronized (lock) { // Synchronize on a separate lock object
                 try {
                     connection.close();
                 } catch (SQLException e) {
-                    // Ignore
+                    e.printStackTrace();
                 }
             }
         }
+    }
+
+    public static boolean createLocalDatabase(String dbFilePath) {
+        String pathSeparator = System.getProperty("file.separator");
+        boolean result = false;
+        if (!dbFilePath.endsWith(pathSeparator)) {
+            dbFilePath += pathSeparator;
+        }else{
+            dbFilePath += DBFILENAME;
+        }
+        String dbUrl = "jdbc:sqlite:" + dbFilePath;
+        try {
+            Connection conn = DriverManager.getConnection(dbUrl);
+            if (conn != null) {
+                validateDatabase(conn);
+            }
+            result = true;
+        } catch (SQLException e) {
+            LOGGER.error("Exception occurred while creating database: {}", e.getMessage());
+        }
+        return result;
     }
 
     public void close() {
@@ -94,45 +113,25 @@ public class SQLiteConnectionPool {
         connections.clear();
     }
 
-    public static Connection validateDatabase(String dbPath) throws SQLException {
-        Connection connection = null;
+    private static void validateDatabase(Connection conn) {
         String[] tableNames = {"metadata", "plugins"};
-        String pathSeparator = System.getProperty("file.separator");
-        boolean isTablePresent = false;
+        try {
+            DatabaseMetaData metaData = conn.getMetaData();
+            ResultSet metadata_table = metaData.getTables(null, null, tableNames[0], null);
+            ResultSet plugin_table = metaData.getTables(null, null, tableNames[1], null);
 
-        if (!dbPath.endsWith(pathSeparator)) {
-            dbPath += pathSeparator;
-        }
-        dbPath += ".metadata.db";
-
-        File dbFile = new File(dbPath);
-        if (!dbFile.exists()) {
-            // Create a new database file if it does not exist.
-            connection = DriverManager.getConnection("jdbc:sqlite:" + dbPath);
-            connection.createStatement().execute(PLUGINS_METADATA);
-            connection.createStatement().execute(PLUGINS_INFO);
-        } else {
-            connection = DriverManager.getConnection("jdbc:sqlite:" + dbPath);
-            if(connection.isValid(5)){
-                try{
-                    DatabaseMetaData metaData = connection.getMetaData();
-                    ResultSet md_table = metaData.getTables(null, null, tableNames[0], null);
-                    ResultSet plug_table = metaData.getTables(null, null, tableNames[1], null);
-                    if (md_table.isBeforeFirst() && plug_table.isBeforeFirst()) {
-                        isTablePresent = true;
-                        LOGGER.info("Table Present - Skipping Tables creation");
-                    }
-                } catch (SQLException e) {
-                    LOGGER.error("Exception occurred while fetching metadata from db file : %s", e);
-                }
-                if(!isTablePresent){
-                    LOGGER.info("Table not Present - creating Tables");
-                    connection.createStatement().execute(PLUGINS_METADATA);
-                    connection.createStatement().execute(PLUGINS_INFO);
-                }
+            if (metadata_table.isBeforeFirst() && plugin_table.isBeforeFirst()) {
+                LOGGER.info("Table Present - Skipping Tables creation");
+            } else {
+                LOGGER.info("Table not Present - creating Tables");
+                conn.createStatement().execute(PLUGINS_METADATA);
+                conn.createStatement().execute(PLUGINS_INFO);
             }
+        } catch (SQLException e) {
+            LOGGER.error("Exception occurred while fetching metadata from db file", e);
+        } finally {
+            releaseConnection(conn);
         }
-        return connection;
     }
 
     public static String getDB_FILE_PATH() {

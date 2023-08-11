@@ -4,12 +4,10 @@ import io.perfwise.local.pluginsmanager.sqlite.SQLiteConnectionPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Properties;
 
 public class PreCheckValidation {
-
     private static final Logger LOGGER = LoggerFactory.getLogger(PreCheckValidation.class.getName());
     private final Properties props;
     private final DirectoryOps directoryOps;
@@ -48,25 +46,17 @@ public class PreCheckValidation {
     }
 
     public boolean validate() throws SQLException {
+        boolean result = false;
         if (validateDirectoryPresence()){
-            createLocalDatabase();
-            return true;
+            result = createLocalDatabaseIfNotPresent();
         }else {
-            return false;
+            result = createLocalDatabaseIfNotPresent();
         }
+        return result;
     }
 
-    private void createLocalDatabase() throws SQLException {
-        Connection conn = null;
-        try{
-            conn = SQLiteConnectionPool.validateDatabase(props.getProperty("local.sqlite.db.path"));
-            LOGGER.info("Database Created ");
-        }catch(SQLException sqle){
-            LOGGER.error("Exception occurred while creating DB :: %S", sqle);
-        }finally {
-            if(conn != null){
-                conn.close();
-            }
-        }
+    private boolean createLocalDatabaseIfNotPresent() {
+        return SQLiteConnectionPool.createLocalDatabase(props.getProperty("local.sqlite.db.path"));
     }
+
 }

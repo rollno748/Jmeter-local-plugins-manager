@@ -19,8 +19,6 @@ import java.util.Properties;
 public class Parse {
     private static final Logger LOGGER = LoggerFactory.getLogger(Parse.class);
     private static Connection conn;
-
-    private static Properties props;
     private static HttpRequest httpRequest = null;
     private static final String PLUGINS_METADATA_INFO = "SELECT ID, VERSIONS FROM METADATA";
     private static final String PLUGINS_INFO = "SELECT ID, VERSIONS_COUNT FROM PLUGINS";
@@ -30,7 +28,6 @@ public class Parse {
 
     public Parse(Properties props) {
         httpRequest = new HttpRequest(props);
-        Parse.props = props;
         try {
             Parse.conn = SQLiteConnectionPool.getConnection();
         } catch (InterruptedException | SQLException e) {
@@ -60,7 +57,7 @@ public class Parse {
                         }
                     }
                 }else{
-//                    downloadAllPlugins(jmeterRepoJson);
+                    getAllPluginsNames(jmeterRepoJson);
                 }
             } catch (SQLException sqle) {
                 LOGGER.error("Exception occurred while executing query : %s", sqle);
@@ -69,7 +66,7 @@ public class Parse {
         return getMissingPluginsList(jmeterRepoJson, pluginInfoFromDB);
     }
 
-    private static void downloadAllPlugins(JSONArray jmeterRepoJson) throws URISyntaxException, IOException {
+    public static void downloadAllPlugins(JSONArray jmeterRepoJson) throws URISyntaxException, IOException {
         for (int i = 0; i < jmeterRepoJson.length(); i++) {
             httpRequest.downloadPlugins(jmeterRepoJson.getJSONObject(i));
         }
@@ -86,8 +83,7 @@ public class Parse {
         return missingPluginsList;
     }
 
-    public static Boolean validatePluginCount(JSONArray pluginsArray) throws SQLException, InterruptedException {
-        int publicCount = pluginsArray.length();
+    public static int getLocalPluginCount(JSONArray pluginsArray) throws SQLException, InterruptedException {
         int localStoreCount = 0;
         conn = SQLiteConnectionPool.getConnection();
 
@@ -98,16 +94,18 @@ public class Parse {
             } catch (SQLException e) {
                 LOGGER.error("Exception occurred while executing SQL statement");
                 throw new RuntimeException(e);
+            }finally{
+                SQLiteConnectionPool.releaseConnection(conn);
             }
         }
-        return publicCount > localStoreCount;
+        return localStoreCount;
     }
 
-    public static HttpRequest getHttpRequest() {
-        return httpRequest;
-    }
-
-    public static void setHttpRequest(HttpRequest httpRequest) {
-        Parse.httpRequest = httpRequest;
+    public void downloadMissingPlugins(List<String> missingPluginsList, JSONArray pluginsArray) throws URISyntaxException, IOException {
+        for (int i = 0; i < pluginsArray.length(); i++) {
+            if(missingPluginsList.contains(pluginsArray.getJSONObject(i).getString("id"))){
+                httpRequest.downloadPlugins(pluginsArray.getJSONObject(i));
+            }
+        }
     }
 }

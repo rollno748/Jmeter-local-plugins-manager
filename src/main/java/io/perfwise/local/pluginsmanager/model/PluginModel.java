@@ -13,6 +13,9 @@ public class PluginModel {
     @JsonProperty("id")
     private String id;
 
+    @JsonProperty("type")
+    private String type;
+
     @JsonProperty("markerClass")
     private String markerClass;
 
@@ -26,7 +29,8 @@ public class PluginModel {
     private String vendor;
 
     @JsonProperty("versions_count")
-    private int versions;
+    private int versions_count;
+
 
     // Getter and Setter methods
     public String getDescription() {
@@ -82,58 +86,19 @@ public class PluginModel {
         this.vendor = vendor;
     }
 
-    public int getVersions() {
-        return versions;
+    public String getType() {
+        return type;
     }
 
-    public void setVersions(int versions) {
-        this.versions = versions;
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public int getVersions_count() {
+        return versions_count;
+    }
+
+    public void setVersions_count(int versions_count) {
+        this.versions_count = versions_count;
     }
 }
-
-
-
-//    public Map<String, Version> getVersions() {
-//        return versions;
-//    }
-//
-//    public void setVersions(Map<String, Version> versions) {
-//        this.versions = versions;
-//    }
-//
-//    public static class Version {
-//        @JsonProperty("depends")
-//        private String[] depends;
-//
-//        @JsonProperty("downloadUrl")
-//        private String downloadUrl;
-//
-//        @JsonProperty("changes")
-//        private String changes;
-//
-//        // Getter and Setter methods
-//
-//        public String[] getDepends() {
-//            return depends;
-//        }
-//
-//        public void setDepends(String[] depends) {
-//            this.depends = depends;
-//        }
-//
-//        public String getDownloadUrl() {
-//            return downloadUrl;
-//        }
-//
-//        public void setDownloadUrl(String downloadUrl) {
-//            this.downloadUrl = downloadUrl;
-//        }
-//
-//        public String getChanges() {
-//            return changes;
-//        }
-//
-//        public void setChanges(String changes) {
-//            this.changes = changes;
-//        }
-//    }

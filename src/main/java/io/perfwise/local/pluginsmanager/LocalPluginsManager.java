@@ -10,8 +10,8 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.SQLException;
-import java.util.Timer;
 import java.util.Properties;
+import java.util.Timer;
 
 public class LocalPluginsManager {
 
@@ -55,3 +55,4 @@ public class LocalPluginsManager {
         }
     }
 }
+

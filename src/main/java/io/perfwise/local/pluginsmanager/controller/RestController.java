@@ -43,11 +43,11 @@ public class RestController {
      */
     public void startRestServer() {
         try {
-            port(serverPort);
-            staticFiles.location(System.getProperty("user.dir") + "/src/main/resources/public/");
-//            staticFiles.externalLocation(System.getProperty("user.dir") + "/src/main/resources");
-            connectionPool = SQLiteConnectionPool.getInstance(fileServerLocation, MIN_THREADS, MAX_THREADS, TIMEOUT);
+//            staticFiles.location(System.getProperty("user.dir") + "/src/main/resources/public/");
+            staticFiles.location("/public");
             staticFiles.externalLocation(this.fileServerLocation);
+            port(serverPort);
+            connectionPool = SQLiteConnectionPool.getInstance(fileServerLocation, MIN_THREADS, MAX_THREADS, TIMEOUT);
             init();
             awaitInitialization();
             loadRestApiServices();
@@ -70,7 +70,7 @@ public class RestController {
                 return "Hello Work !";
             });
 
-            post("/upload", (req, res) -> {
+            get("/upload", (req, res) -> {
                 JSONObject jsonObject = new JSONObject(req.body());
                 uploadService.uploadCustomPlugin(jsonObject);
                 return null;

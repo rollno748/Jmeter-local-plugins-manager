@@ -18,8 +18,7 @@ public class ScheduledTasks extends TimerTask {
     private static final Logger LOGGER = LoggerFactory.getLogger(ScheduledTasks.class);
     private final Properties props;
     private Parse parser;
-    private Boolean isNewPluginsAvailable;
-    private Boolean isNewPluginVersionAvailable;
+    private int localDBPluginsCount;
 
     public ScheduledTasks(Properties props) {
         this.props = props;
@@ -31,16 +30,17 @@ public class ScheduledTasks extends TimerTask {
         try {
             JSONArray pluginsArray = HttpRequest.get(props.getProperty("jmeter.plugins.url"));
             if(isNewPluginsAvailable(pluginsArray)){
-                List<String> missingPluginsList = parser.getMissingPluginsNames(pluginsArray);
-                this.downloadMissingPlugins(missingPluginsList, pluginsArray);
-            }else if(isNewPluginVersionAvailable(pluginsArray)){
-                this.downloadMissingPluginVersion(pluginsArray);
+                if(getLocalDBPluginsCount() == 0){
+                    parser.downloadAllPlugins(pluginsArray);
+                }else{
+                    List<String> missingPluginsList = parser.getMissingPluginsNames(pluginsArray);
+                    if(pluginsArray.length() > missingPluginsList.size()){
+                        parser.downloadMissingPlugins(missingPluginsList, pluginsArray);
+                    }
+                }
             }else{
                 LOGGER.info("Skipping Downloader - No new plugins available");
             }
-//            List<String> ls = Parse.getAllPluginsNames(pluginsArray);
-//            Boolean isNewPluginsAvailable = this.compareMetaDataInfo(pluginsArray);
-//            System.out.println(pluginsArray);
         } catch (IOException | SQLException | InterruptedException e) {
             LOGGER.error("Exception occurred while checking with plugins manager");
             throw new RuntimeException(e);
@@ -50,19 +50,18 @@ public class ScheduledTasks extends TimerTask {
         LOGGER.debug("Checking for plugin updates from Plugins manager");
     }
 
-    private void downloadMissingPluginVersion(JSONArray pluginsArray) {
-    }
-
-    private void downloadMissingPlugins(List<String> missingPluginsList, JSONArray pluginsArray) {
-
-    }
-
-    private boolean isNewPluginVersionAvailable(JSONArray pluginsArray) {
-
-        return false;
-    }
-
     private Boolean isNewPluginsAvailable(JSONArray pluginsArray) throws SQLException, InterruptedException {
-        return Parse.validatePluginCount(pluginsArray);
+        int publicCount = pluginsArray.length();
+        int localStoreCount = Parse.getLocalPluginCount(pluginsArray);
+        setLocalDBPluginsCount(localStoreCount);
+        return publicCount > localStoreCount;
+    }
+
+    public int getLocalDBPluginsCount() {
+        return localDBPluginsCount;
+    }
+
+    public void setLocalDBPluginsCount(int localDBPluginsCount) {
+        this.localDBPluginsCount = localDBPluginsCount;
     }
 }
