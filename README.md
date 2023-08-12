@@ -16,4 +16,13 @@ Intranet Plugin Manager for Jmeter to avoid downloading plugins from Internet
  - Custom Plugins api
  - Merged (Public and Custom) Plugins api
 
+* Steps
+ - ~~Create sqlite DB~~
+ ~~- Create table~~ 
+ ~~- Create a webserver for accessing jars~~
+ - ~~Download plugins with threadpool executor~~ (plugins and dependencies separately) service
+ - Serve static form page for uploading custom plugins
+ - Build a custom json for a combined information
+ 
+
 

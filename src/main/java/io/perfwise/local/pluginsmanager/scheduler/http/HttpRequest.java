@@ -1,6 +1,8 @@
 package io.perfwise.local.pluginsmanager.scheduler.http;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.gson.Gson;
+import io.perfwise.local.pluginsmanager.model.MetadataModel;
 import io.perfwise.local.pluginsmanager.model.PluginModel;
 import io.perfwise.local.pluginsmanager.sqlite.SQLiteConnectionPool;
 import org.apache.http.HttpEntity;
@@ -35,6 +37,7 @@ public class HttpRequest {
     private Connection conn;
     private static final int MAX_RETRIES = 10;
     private static final long RETRY_INTERVAL_MS = 60000;
+    private static String INSERT_METADATA_INFO = "INSERT INTO metadata (id, version) VALUES (?, ?)";
     private static String INSERT_PLUGIN_INFO = "INSERT INTO plugins (id, name, type, description, helpUrl, markerClass, screenshotUrl, vendor, versions_count) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
     public HttpRequest(Properties props){
@@ -112,10 +115,44 @@ public class HttpRequest {
         }
     }
 
+
+
+    @JsonProperty("versions_count")
+    private void updatePluginMetadataInfo(JSONObject pluginObject) {
+        pluginObject.remove("description");
+        pluginObject.remove("screenshotUrl");
+        pluginObject.remove("vendor");
+        pluginObject.remove("name");
+        pluginObject.remove("markerClass");
+        pluginObject.remove("helpUrl");
+
+        MetadataModel metadataModel = new Gson().fromJson(String.valueOf(pluginObject), MetadataModel.class);
+        try{
+            if(conn == null){
+                conn = SQLiteConnectionPool.getConnection();
+            }
+
+            PreparedStatement preparedStatement = conn.prepareStatement(INSERT_METADATA_INFO);
+            preparedStatement.setString(1, metadataModel.getId());
+            preparedStatement.setString(2, metadataModel.getVersions());
+
+            int rowsInserted = preparedStatement.executeUpdate();
+            if (rowsInserted > 0) {
+                System.out.println("Data inserted successfully!");
+            } else {
+                System.out.println("Failed to insert data.");
+            }
+            preparedStatement.close();
+        }catch (SQLException | InterruptedException e){
+            e.printStackTrace();
+        }
+
+    }
+
     private void updatePluginInfoInDB(JSONObject pluginObject, String type) {
-        JSONObject versionObj = pluginObject.getJSONObject("versions");
+//        JSONObject versionObj = pluginObject.getJSONObject("versions");
         int versionsCount = pluginObject.getJSONObject("versions").length();
-        pluginObject.remove("versions");
+//        pluginObject.remove("versions");
         pluginObject.put("versions_count", versionsCount);
         PluginModel pluginModel = new Gson().fromJson(String.valueOf(pluginObject), PluginModel.class);
 
@@ -135,6 +172,8 @@ public class HttpRequest {
             preparedStatement.setString(8, pluginModel.getVendor());
             preparedStatement.setInt(9, pluginModel.getVersions_count());
 
+
+
             int rowsInserted = preparedStatement.executeUpdate();
             if (rowsInserted > 0) {
                 System.out.println("Data inserted successfully!");
@@ -145,6 +184,8 @@ public class HttpRequest {
         }catch (SQLException | InterruptedException e){
             e.printStackTrace();
         }
+
+        this.updatePluginMetadataInfo(pluginObject);
     }
 
     public Properties getProps() {

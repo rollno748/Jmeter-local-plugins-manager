@@ -3,12 +3,19 @@ package io.perfwise.local.pluginsmanager.controller;
 import io.perfwise.local.pluginsmanager.service.UploadService;
 import io.perfwise.local.pluginsmanager.service.UploadServiceImpl;
 import io.perfwise.local.pluginsmanager.sqlite.SQLiteConnectionPool;
-import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.thymeleaf.TemplateEngine;
+import org.thymeleaf.context.Context;
+import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
+import spark.ModelAndView;
 import spark.Spark;
+import spark.template.thymeleaf.ThymeleafTemplateEngine;
 
 import java.net.InetAddress;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Properties;
 
 import static spark.Spark.*;
@@ -43,7 +50,6 @@ public class RestController {
      */
     public void startRestServer() {
         try {
-//            staticFiles.location(System.getProperty("user.dir") + "/src/main/resources/public/");
             staticFiles.location("/public");
             staticFiles.externalLocation(this.fileServerLocation);
             port(serverPort);
@@ -62,6 +68,7 @@ public class RestController {
      * This method creates URI Path for the Rest services
      */
     public void loadRestApiServices() {
+
         UploadService uploadService = new UploadServiceImpl();
         path(RestController.uriPath, () -> {
             before("/*", (req, res) -> LOGGER.info("Received api call"));
@@ -70,12 +77,11 @@ public class RestController {
                 return "Hello Work !";
             });
 
-            get("/upload", (req, res) -> {
-                JSONObject jsonObject = new JSONObject(req.body());
-                uploadService.uploadCustomPlugin(jsonObject);
-                return null;
-            });
-
+//            get("/upload", (req, res) -> {
+//                JSONObject jsonObject = new JSONObject(req.body());
+//                uploadService.uploadCustomPlugin(jsonObject);
+//                return null;
+//            });
             after((req, res) -> res.header("Content-Encoding", "gzip"));
 
         });
