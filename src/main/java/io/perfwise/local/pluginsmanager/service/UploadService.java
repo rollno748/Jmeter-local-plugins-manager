@@ -1,9 +1,10 @@
 package io.perfwise.local.pluginsmanager.service;
 
-import org.json.JSONObject;
+import org.apache.commons.fileupload.FileItem;
+
+import java.io.IOException;
+import java.util.List;
 
 public interface UploadService {
-
-    public void uploadCustomPlugin(JSONObject jsonObject);
-    public void uploadLibsForCustomPlugin();
+    void handleFileUpload(List<FileItem> inputStream) throws IOException;
 }

@@ -1,6 +1,5 @@
 package io.perfwise.local.pluginsmanager.scheduler.http;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.gson.Gson;
 import io.perfwise.local.pluginsmanager.model.MetadataModel;
 import io.perfwise.local.pluginsmanager.model.PluginModel;
@@ -27,6 +26,7 @@ import java.net.URL;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Properties;
 
 public class HttpRequest {
@@ -37,7 +37,7 @@ public class HttpRequest {
     private Connection conn;
     private static final int MAX_RETRIES = 10;
     private static final long RETRY_INTERVAL_MS = 60000;
-    private static String INSERT_METADATA_INFO = "INSERT INTO metadata (id, version) VALUES (?, ?)";
+    private static String INSERT_METADATA_INFO = "INSERT INTO metadata (id, version, downloadUrl, libs) VALUES (?, ?, ?, ?)";
     private static String INSERT_PLUGIN_INFO = "INSERT INTO plugins (id, name, type, description, helpUrl, markerClass, screenshotUrl, vendor, versions_count) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
     public HttpRequest(Properties props){
@@ -94,39 +94,44 @@ public class HttpRequest {
         return huc.getResponseCode();
     }
 
+    public static void fileUploader(String pluginJar, List<String> dependencyJars, String customPluginPath) {
+
+
+    }
+
+    public static void fileUploader(String pluginJar, String customPluginPath) {
+        fileUploader(pluginJar, null, customPluginPath);
+    }
+
     public void downloadPlugins(JSONObject pluginObject) throws URISyntaxException, IOException {
+        JSONObject metaDataObj = new JSONObject();
+        metaDataObj.put("id", pluginObject.getString("id"));
         JSONObject versionObj = pluginObject.getJSONObject("versions");
         for (String version : versionObj.keySet()) {
+            metaDataObj.put("version", version);
             JSONObject verObj = versionObj.getJSONObject(version);
             if(!verObj.isNull("downloadUrl")){
                 String downloadUrl = verObj.getString("downloadUrl");
+                metaDataObj.put("downloadUrl",  downloadUrl.substring(downloadUrl.lastIndexOf('/') + 1));
                 fileDownloader(this.getProps().getProperty("local.repo.plugins.dir.path"), new URI(downloadUrl).toURL());
 
                if(verObj.has("libs")){
                     JSONObject libsObject = verObj.getJSONObject("libs");
+                    metaDataObj.put("libs", libsObject);
                     for (String lib : libsObject.keySet()) {
                         String libUrl = libsObject.getString(lib);
                         fileDownloader(this.getProps().getProperty("local.repo.dependencies.dir.path"), new URI(libUrl).toURL());
                     }
                 }
             }
-            this.updatePluginInfoInDB(pluginObject, "public");
+            this.updatePluginMetadataInfo(metaDataObj);
             LOGGER.info("Downloaded {} plugin - version {}", pluginObject.getString("id"), version);
         }
+        this.updatePluginInfoInDB(pluginObject, "public");
     }
 
-
-
-    @JsonProperty("versions_count")
-    private void updatePluginMetadataInfo(JSONObject pluginObject) {
-        pluginObject.remove("description");
-        pluginObject.remove("screenshotUrl");
-        pluginObject.remove("vendor");
-        pluginObject.remove("name");
-        pluginObject.remove("markerClass");
-        pluginObject.remove("helpUrl");
-
-        MetadataModel metadataModel = new Gson().fromJson(String.valueOf(pluginObject), MetadataModel.class);
+    private void updatePluginMetadataInfo(JSONObject metaDataObj) {
+        MetadataModel metadataModel = new Gson().fromJson(String.valueOf(metaDataObj), MetadataModel.class);
         try{
             if(conn == null){
                 conn = SQLiteConnectionPool.getConnection();
@@ -134,7 +139,9 @@ public class HttpRequest {
 
             PreparedStatement preparedStatement = conn.prepareStatement(INSERT_METADATA_INFO);
             preparedStatement.setString(1, metadataModel.getId());
-            preparedStatement.setString(2, metadataModel.getVersions());
+            preparedStatement.setString(2, metadataModel.getVersion());
+            preparedStatement.setString(3, metadataModel.getDownloadUrl());
+            preparedStatement.setString(4, metadataModel.getLibs());
 
             int rowsInserted = preparedStatement.executeUpdate();
             if (rowsInserted > 0) {
@@ -150,9 +157,7 @@ public class HttpRequest {
     }
 
     private void updatePluginInfoInDB(JSONObject pluginObject, String type) {
-//        JSONObject versionObj = pluginObject.getJSONObject("versions");
         int versionsCount = pluginObject.getJSONObject("versions").length();
-//        pluginObject.remove("versions");
         pluginObject.put("versions_count", versionsCount);
         PluginModel pluginModel = new Gson().fromJson(String.valueOf(pluginObject), PluginModel.class);
 
@@ -172,8 +177,6 @@ public class HttpRequest {
             preparedStatement.setString(8, pluginModel.getVendor());
             preparedStatement.setInt(9, pluginModel.getVersions_count());
 
-
-
             int rowsInserted = preparedStatement.executeUpdate();
             if (rowsInserted > 0) {
                 System.out.println("Data inserted successfully!");
@@ -184,8 +187,6 @@ public class HttpRequest {
         }catch (SQLException | InterruptedException e){
             e.printStackTrace();
         }
-
-        this.updatePluginMetadataInfo(pluginObject);
     }
 
     public Properties getProps() {

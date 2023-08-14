@@ -12,31 +12,59 @@ function submitForm() {
   var pluginJar = document.getElementById("pluginJar").files[0];
   var dependencyJars = document.getElementById("dependencyJars").files;
 
-  // Send the form data to the server.
-  var xhr = new XMLHttpRequest();
-  xhr.open("POST", "/submit-form");
-  xhr.setRequestHeader("Content-Type", "application/json");
-  xhr.send(JSON.stringify({
-    id: id,
-    name: name,
-    description: description,
-    helpUrl: helpUrl,
-    markerClass: markerClass,
-    screenshotUrl: screenshotUrl,
-    vendor: vendor,
-    version: version,
-    pluginJar: pluginJar,
-    dependencyJars: dependencyJars
-  }));
+  var formData = new FormData();
+      formData.append("id", id);
+      formData.append("name", name);
+      formData.append("description", description);
+      formData.append("helpUrl", helpUrl);
+      formData.append("markerClass", markerClass);
+      formData.append("screenshotUrl", screenshotUrl);
+      formData.append("vendor", vendor)
+      formData.append("version", version);
 
-  // Redirect the user to the success page.
-  xhr.onload = function() {
-    if (xhr.status === 200) {
-      window.location.href = "/success";
-    } else {
-      alert("Something went wrong.");
-    }
-  };
+      formData.append("pluginJar", pluginJar);
+      for (var i = 0; i < dependencyJars.length; i++) {
+          formData.append("dependencyJars", dependencyJars[i]);
+      }
+
+
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", "/v1/upload", true);
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
+            if (xhr.status === 200) {
+                alert("Upload successful!");
+            } else {
+                alert("Upload failed.");
+            }
+        }
+    };
+    xhr.send(formData);
+      // Redirect the user to the success page.
+      xhr.onload = function() {
+        if (xhr.status === 200) {
+          alert("Success");
+        } else {
+          alert("Something went wrong.");
+        }
+      };
+//  var xhr = new XMLHttpRequest();
+//  xhr.open("POST", "/submit-form");
+//  xhr.setRequestHeader("Content-Type", "application/json");
+//  xhr.send(JSON.stringify({
+//    id: id,
+//    name: name,
+//    description: description,
+//    helpUrl: helpUrl,
+//    markerClass: markerClass,
+//    screenshotUrl: screenshotUrl,
+//    vendor: vendor,
+//    version: version,
+//    pluginJar: pluginJar,
+//    dependencyJars: dependencyJars
+//  }));
+
+
 }
 
 // Add an event listener to the submit button.

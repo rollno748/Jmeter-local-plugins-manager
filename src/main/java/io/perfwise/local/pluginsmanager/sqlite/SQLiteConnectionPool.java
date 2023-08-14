@@ -18,7 +18,7 @@ public class SQLiteConnectionPool {
     private static SQLiteConnectionPool instance;
     private static String DB_FILE_PATH;
     private static final String DBFILENAME = "plugins.db";
-    private static final String PLUGINS_METADATA = "CREATE TABLE metadata (id TEXT PRIMARY KEY, versions TEXT(1000000))";
+    private static final String PLUGINS_METADATA = "CREATE TABLE metadata (id TEXT, version TEXT, downloadUrl TEXT, libs TEXT(1000000))";
     private static final String PLUGINS_INFO = "CREATE TABLE plugins (id TEXT PRIMARY KEY, name TEXT, type TEXT, description TEXT, helpUrl TEXT, markerClass TEXT, screenshotUrl TEXT, vendor TEXT, versions_count INTEGER)";
     private static int minPoolSize;
     private static int maxPoolSize;

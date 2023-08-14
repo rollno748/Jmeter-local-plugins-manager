@@ -20,7 +20,6 @@ public class Parse {
     private static final Logger LOGGER = LoggerFactory.getLogger(Parse.class);
     private static Connection conn;
     private static HttpRequest httpRequest = null;
-    private static final String PLUGINS_METADATA_INFO = "SELECT ID, VERSIONS FROM METADATA";
     private static final String PLUGINS_INFO = "SELECT ID, VERSIONS_COUNT FROM PLUGINS";
 
     public Parse() {
