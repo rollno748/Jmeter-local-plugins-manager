@@ -2,7 +2,6 @@ package io.perfwise.local.pluginsmanager;
 
 import io.perfwise.local.pluginsmanager.controller.RestController;
 import io.perfwise.local.pluginsmanager.scheduler.ScheduledTasks;
-import io.perfwise.local.pluginsmanager.sqlite.SQLiteConnectionPool;
 import io.perfwise.local.pluginsmanager.utils.PreCheckValidation;
 import org.apache.commons.cli.*;
 import org.slf4j.Logger;

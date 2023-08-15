@@ -1,11 +1,15 @@
 package io.perfwise.local.pluginsmanager.utils;
 
+import io.perfwise.local.pluginsmanager.sqlite.SQLiteConnectionPool;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.IOException;
-import java.util.logging.Logger;
 
 public class DirectoryOps {
-    private static final Logger LOGGER = Logger.getLogger(DirectoryOps.class.getName());
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(SQLiteConnectionPool.class);
 
     public boolean createDirectory(String dirPath){
         boolean status = false;

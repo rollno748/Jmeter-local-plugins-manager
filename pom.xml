@@ -7,7 +7,6 @@
 	<version>2.0</version>
 
 	<properties>
-		<log4j-version>2.17.2</log4j-version>
 		<spark-java>2.9.4</spark-java>
 		<sqlite-version>3.42.0.0</sqlite-version>
 		<commons-cli-vesion>1.4</commons-cli-vesion>
@@ -15,6 +14,7 @@
 		<json-version>20230618</json-version>
 		<gson-version>2.8.9</gson-version>
 		<jackson-databind-version>2.12.5</jackson-databind-version>
+		<jsoup-version>1.16.1</jsoup-version>
 		<logback-version>1.2.6</logback-version>
 		<commons-fileupload>1.5</commons-fileupload>
 	</properties>
@@ -65,6 +65,12 @@
 			<artifactId>commons-fileupload</artifactId>
 			<version>${commons-fileupload}</version>
 		</dependency>
+		<dependency>
+			<groupId>org.jsoup</groupId>
+			<artifactId>jsoup</artifactId>
+			<version>${jsoup-version}</version>
+		</dependency>
+
 	</dependencies>
 
 	<build>

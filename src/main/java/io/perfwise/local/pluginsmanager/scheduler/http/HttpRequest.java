@@ -12,6 +12,10 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,19 +30,22 @@ import java.net.URL;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class HttpRequest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpRequest.class);
-    private static final HttpClient HTTP_CLIENT = HttpClients.createDefault();
     private Properties props;
     private Connection conn;
+    private static final HttpClient HTTP_CLIENT = HttpClients.createDefault();
     private static final int MAX_RETRIES = 10;
     private static final long RETRY_INTERVAL_MS = 60000;
-    private static String INSERT_METADATA_INFO = "INSERT INTO metadata (id, version, downloadUrl, libs) VALUES (?, ?, ?, ?)";
-    private static String INSERT_PLUGIN_INFO = "INSERT INTO plugins (id, name, type, description, helpUrl, markerClass, screenshotUrl, vendor, versions_count) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    private static final String INSERT_METADATA_INFO = "INSERT INTO metadata (id, version, downloadUrl, libs) VALUES (?, ?, ?, ?)";
+    private static final String INSERT_PLUGIN_INFO = "INSERT INTO plugins (id, name, type, description, helpUrl, markerClass, screenshotUrl, vendor, versions_count) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
     public HttpRequest(Properties props){
         this.props = props;
@@ -112,12 +119,20 @@ public class HttpRequest {
             JSONObject verObj = versionObj.getJSONObject(version);
             if(!verObj.isNull("downloadUrl")){
                 String downloadUrl = verObj.getString("downloadUrl");
-                metaDataObj.put("downloadUrl",  downloadUrl.substring(downloadUrl.lastIndexOf('/') + 1));
-                fileDownloader(this.getProps().getProperty("local.repo.plugins.dir.path"), new URI(downloadUrl).toURL());
-
+                if(!downloadUrl.contains("%1$s.jar")){
+                    metaDataObj.put("downloadUrl",  downloadUrl.substring(downloadUrl.lastIndexOf('/') + 1));
+                    fileDownloader(this.getProps().getProperty("local.repo.plugins.dir.path"), new URI(downloadUrl).toURL());
+                }else{
+                    List<String> availableVersions = this.getAvailableLibraryVersions(downloadUrl);
+                    for (String ver : availableVersions){
+                        String url = downloadUrl.replace("%1$s", ver);
+                        metaDataObj.put("downloadUrl",  url.substring(url.lastIndexOf('/') + 1));
+                        fileDownloader(this.getProps().getProperty("local.repo.plugins.dir.path"), new URI(url).toURL());
+                    }
+                }
                if(verObj.has("libs")){
                     JSONObject libsObject = verObj.getJSONObject("libs");
-                    metaDataObj.put("libs", libsObject);
+                    metaDataObj.put("libs", libsObject.toString());
                     for (String lib : libsObject.keySet()) {
                         String libUrl = libsObject.getString(lib);
                         fileDownloader(this.getProps().getProperty("local.repo.dependencies.dir.path"), new URI(libUrl).toURL());
@@ -128,6 +143,35 @@ public class HttpRequest {
             LOGGER.info("Downloaded {} plugin - version {}", pluginObject.getString("id"), version);
         }
         this.updatePluginInfoInDB(pluginObject, "public");
+    }
+
+    private List<String> getAvailableLibraryVersions(String downloadUrl) {
+        String libName = null;
+        Pattern pattern = Pattern.compile("jmeter/(?<libName>[^/]+)/%\\d[^/]*");
+        Matcher matcher = pattern.matcher(downloadUrl);
+        if(matcher.find()) {
+            libName = matcher.group("libName");
+        }
+        return fetchAvailableVersions(libName);
+    }
+
+    private List<String> fetchAvailableVersions(String libName) {
+        Document doc = null;
+        List<String> versions = new ArrayList<>();
+        try{
+            doc = Jsoup.connect("https://repo1.maven.org/maven2/org/apache/jmeter/" + libName).get();
+            Elements links = doc.select("a[href]");
+            for(Element link : links) {
+                String href = link.attr("href");
+                if(href.contains(libName + "-")) {
+                    String version = href.substring(href.lastIndexOf("-") + 1, href.lastIndexOf(".jar"));
+                    versions.add(version);
+                }
+            }
+        }catch (IOException e){
+            e.printStackTrace();
+        }
+        return versions;
     }
 
     private void updatePluginMetadataInfo(JSONObject metaDataObj) {

@@ -1,12 +1,8 @@
 package io.perfwise.local.pluginsmanager.model;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.util.List;
 
 public class UploadModel {
-
-
     private String id;
     private String name;
     private String description;

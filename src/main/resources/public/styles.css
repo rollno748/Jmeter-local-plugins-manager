@@ -2,17 +2,19 @@ body {
   font-family: sans-serif;
   margin: 0;
   padding: 0;
+  background-image: linear-gradient(to bottom, #212529, #ffffff);
+  background-repeat: no-repeat;
+  background-size: cover;
 }
 
 .form {
-  width: 500px;
-  margin: 25px auto;
+  width: 600px;
+  margin: 75px auto;
   padding: 20px;
   background-color: #ffffff;
   border-radius: 8px;
   border: 1px solid #ccc;
-  background-color: #ffffff;
-  background-image: linear-gradient(to bottom, #46d1bc, #55e0c9);
+  background-image: linear-gradient(to bottom, #d9534f, #ffd700);
   background-repeat: no-repeat;
   background-size: cover;
 }
@@ -61,23 +63,8 @@ h1{
   border-color: #000;
 }
 
-.form input, .form select, .form button {
-  color: #000;
-}
-
 .form button {
   background-color: #000;
   color: #fff;
-}
-
-body {
-  background-image: linear-gradient(to bottom, #212529, #ffffff);
-  background-repeat: no-repeat;
-  background-size: cover;
-}
-
-.form {
-  background-image: linear-gradient(to bottom, #d9534f, #ffd700);
-  background-repeat: no-repeat;
-  background-size: cover;
+  margin-left: 45%
 }
