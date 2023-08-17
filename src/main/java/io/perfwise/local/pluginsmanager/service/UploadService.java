@@ -6,5 +6,5 @@ import java.io.IOException;
 import java.util.List;
 
 public interface UploadService {
-    void handleFileUpload(List<FileItem> inputStream) throws IOException;
+    String handleFileUpload(List<FileItem> items) throws IOException;
 }

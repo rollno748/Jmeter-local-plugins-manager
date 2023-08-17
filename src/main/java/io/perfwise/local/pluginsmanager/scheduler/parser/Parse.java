@@ -47,16 +47,12 @@ public class Parse {
         if(!conn.isClosed()){
             try {
                 ResultSet rs = conn.createStatement().executeQuery(PLUGINS_INFO);
-                if(rs.next()){
-                    while(rs.next()){
-                        String id = rs.getString("id");
-                        int version = rs.getInt("versions_count");
-                        if(!pluginInfoFromDB.containsKey(id)){
-                            pluginInfoFromDB.put(id, version);
-                        }
+                while(rs.next()){
+                    String id = rs.getString("id");
+                    int version = rs.getInt("versions_count");
+                    if(!pluginInfoFromDB.containsKey(id)){
+                        pluginInfoFromDB.put(id, version);
                     }
-                }else{
-                    getAllPluginsNames(jmeterRepoJson);
                 }
             } catch (SQLException sqle) {
                 LOGGER.error("Exception occurred while executing query : %s", sqle);

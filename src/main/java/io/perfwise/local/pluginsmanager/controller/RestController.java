@@ -98,8 +98,12 @@ public class RestController {
                 req.attribute("org.eclipse.jetty.multipartConfig", new MultipartConfigElement("/temp"));
                 UploadService uploadService = new UploadServiceImpl(RestController.customPluginPath, RestController.libPath);
                 List<FileItem> items = upload.parseRequest(req.raw());
-                uploadService.handleFileUpload(items);
-                return null;
+                String resp = uploadService.handleFileUpload(items);
+                if(Integer.parseInt(resp) >= 500){
+                    return "Something went wrong !";
+                }else{
+                    return "File Uploaded Successfully !";
+                }
             });
 
             after((req, res) -> res.header("Content-Encoding", "gzip"));
