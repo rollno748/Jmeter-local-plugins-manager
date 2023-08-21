@@ -42,21 +42,24 @@ public class Parse {
         return jmeterRepoList;
     }
 
-    public static List<String> getMissingPluginsNames(JSONArray jmeterRepoJson) throws SQLException, URISyntaxException, IOException {
+    public static List<String> getMissingPluginsNames(JSONArray jmeterRepoJson) throws SQLException, URISyntaxException, IOException, InterruptedException {
         HashMap<String, Integer> pluginInfoFromDB = new HashMap<String, Integer>();
-        if(!conn.isClosed()){
-            try {
-                ResultSet rs = conn.createStatement().executeQuery(PLUGINS_INFO);
-                while(rs.next()){
-                    String id = rs.getString("id");
-                    int version = rs.getInt("versions_count");
-                    if(!pluginInfoFromDB.containsKey(id)){
-                        pluginInfoFromDB.put(id, version);
-                    }
+        if(conn.isClosed()){
+            conn = SQLiteConnectionPool.getConnection();
+        }
+        try {
+            ResultSet rs = conn.createStatement().executeQuery(PLUGINS_INFO);
+            while(rs.next()){
+                String id = rs.getString("id");
+                int version = rs.getInt("versions_count");
+                if(!pluginInfoFromDB.containsKey(id)){
+                    pluginInfoFromDB.put(id, version);
                 }
-            } catch (SQLException sqle) {
-                LOGGER.error("Exception occurred while executing query : %s", sqle);
             }
+        } catch (SQLException sqle) {
+            LOGGER.error("Exception occurred while executing query : %s", sqle);
+        }finally {
+            SQLiteConnectionPool.releaseConnection(conn);
         }
         return getMissingPluginsList(jmeterRepoJson, pluginInfoFromDB);
     }
@@ -71,7 +74,7 @@ public class Parse {
         List<String> missingPluginsList = new ArrayList<>(jmeterRepoJson.length());
 
         for (int i = 0; i < jmeterRepoJson.length(); i++) {
-            if(pluginInfoFromDB.containsKey(jmeterRepoJson.getJSONObject(i).getString("id"))){
+            if(!pluginInfoFromDB.containsKey(jmeterRepoJson.getJSONObject(i).getString("id"))){
                 missingPluginsList.add(jmeterRepoJson.getJSONObject(i).getString("id"));
             }
         }

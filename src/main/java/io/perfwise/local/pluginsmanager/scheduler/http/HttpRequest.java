@@ -103,7 +103,6 @@ public class HttpRequest {
 
     public static void fileUploader(String pluginJar, List<String> dependencyJars, String customPluginPath) {
 
-
     }
 
     public static void fileUploader(String pluginJar, String customPluginPath) {

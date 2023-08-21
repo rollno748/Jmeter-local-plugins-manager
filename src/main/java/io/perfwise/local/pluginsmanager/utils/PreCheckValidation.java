@@ -8,7 +8,7 @@ import java.sql.SQLException;
 import java.util.Properties;
 
 public class PreCheckValidation {
-    private static final Logger LOGGER = LoggerFactory.getLogger(PreCheckValidation.class.getName());
+    private static final Logger LOGGER = LoggerFactory.getLogger(PreCheckValidation.class);
     private final Properties props;
     private final DirectoryOps directoryOps;
 

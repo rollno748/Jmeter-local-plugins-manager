@@ -1,6 +1,9 @@
 package io.perfwise.local.pluginsmanager.service;
 
+import io.perfwise.local.pluginsmanager.scheduler.ScheduledTasks;
 import org.apache.commons.fileupload.FileItem;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -9,6 +12,7 @@ import java.nio.file.Files;
 import java.util.List;
 
 public class UploadServiceImpl implements UploadService{
+    private static final Logger LOGGER = LoggerFactory.getLogger(UploadServiceImpl.class);
     private String customPluginPath;
     private String libPath;
 

@@ -33,9 +33,11 @@ public class ScheduledTasks extends TimerTask {
                 if(getLocalDBPluginsCount() == 0){
                     parser.downloadAllPlugins(pluginsArray);
                 }else{
-                    List<String> missingPluginsList = parser.getMissingPluginsNames(pluginsArray);
+                    List<String> missingPluginsList = Parse.getMissingPluginsNames(pluginsArray);
                     if(pluginsArray.length() > missingPluginsList.size()){
                         parser.downloadMissingPlugins(missingPluginsList, pluginsArray);
+                    }else {
+                        LOGGER.info("Repository is up to date.");
                     }
                 }
             }else{
