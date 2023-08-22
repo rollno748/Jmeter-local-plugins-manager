@@ -53,7 +53,6 @@ function submitForm() {
             formData.append("dependencyJars", dependencyJars[i]);
         }
 
-
         var xhr = new XMLHttpRequest();
         xhr.open("POST", "/v1/upload", true);
         xhr.onreadystatechange = function() {

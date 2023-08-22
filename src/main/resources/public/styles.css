@@ -2,10 +2,11 @@ body {
   font-family: sans-serif;
   margin: 0;
   padding: 0;
-  background-image: linear-gradient(to bottom, #212529, #ffffff);
+  background-image: linear-gradient(45deg, #b763b7, #232828, #999981);
   background-repeat: no-repeat;
   background-size: cover;
 }
+
 
 .form {
   width: 600px;
@@ -14,7 +15,7 @@ body {
   background-color: #ffffff;
   border-radius: 8px;
   border: 1px solid #ccc;
-  background-image: linear-gradient(to bottom, #d9534f, #ffd700);
+  background-image: linear-gradient(to bottom, #ab96a1, #907da5);
   background-repeat: no-repeat;
   background-size: cover;
 }
