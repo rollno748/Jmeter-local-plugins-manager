@@ -1,15 +1,15 @@
 // This function is called when the form is submitted.
 function submitForm() {
     const fields = {
-        id: document.getElementById("id")
-        name: document.getElementById("name")
-        description: document.getElementById("description")
-        helpUrl: document.getElementById("helpUrl")
-        markerClass: document.getElementById("markerClass")
-        screenshotUrl: document.getElementById("screenshotUrl")
-        vendor: document.getElementById("vendor")
-        version: document.getElementById("version")
-        pluginJar: document.getElementById("pluginJar")
+        id: document.getElementById("id"),
+        name: document.getElementById("name"),
+        description: document.getElementById("description"),
+        helpUrl: document.getElementById("helpUrl"),
+        markerClass: document.getElementById("markerClass"),
+        screenshotUrl: document.getElementById("screenshotUrl"),
+        vendor: document.getElementById("vendor"),
+        version: document.getElementById("version"),
+        pluginJar: document.getElementById("pluginJar"),
         dependencyJars: document.getElementById("dependencyJars")
     }
 
@@ -29,9 +29,9 @@ function submitForm() {
     var isFormFieldsEmpty;
 
     for (let field of requiredFields) {
-        if (!window[field]) {
+        if (!fields[field].value) {
             isFormFieldsEmpty = true;
-            return;
+            break;
         }else{
             isFormFieldsEmpty = false;
         }
