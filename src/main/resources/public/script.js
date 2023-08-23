@@ -28,16 +28,18 @@ function submitForm() {
 
     var isFormFieldsEmpty;
 
-        for (let field of requiredFields) {
-            if (!window[field]) {
-                isFormFieldsEmpty = true;
-                return;
-            }else{
-                isFormFieldsEmpty = false;
-            }
+    for (let field of requiredFields) {
+        if (!window[field]) {
+            isFormFieldsEmpty = true;
+            return;
+        }else{
+            isFormFieldsEmpty = false;
         }
+    }
 
-    if (isFormFieldsEmpty === false) {
+    if (isFormFieldsEmpty === true){
+        alert("All Fields are required");
+    }else {
         var formData = new FormData();
         formData.append("id", id);
         formData.append("name", name);
@@ -84,8 +86,5 @@ function submitForm() {
                 alert("Something went wrong.");
             }
         };
-    }else{
-        alert("All Fields are required");
     }
-
 }
