@@ -23,10 +23,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
+import java.net.*;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -75,22 +72,26 @@ public class HttpRequest {
     }
 
     public static void fileDownloader(String filePath, URL url) throws IOException {
-        int respCode = getResponseCode(url);
-        if (respCode == 200) {
-            File file = new File(filePath + url.toString().substring(url.toString().lastIndexOf("/")));
+        try{
+            int respCode = getResponseCode(url);
+            if (respCode == 200) {
+                File file = new File(filePath + url.toString().substring(url.toString().lastIndexOf("/")));
 
-            try (InputStream input = url.openStream();
-                 FileOutputStream output = new FileOutputStream(file)) {
-                byte[] buffer = new byte[4096];
-                int n;
-                while ((n = input.read(buffer)) != -1) {
-                    output.write(buffer, 0, n);
+                try (InputStream input = url.openStream();
+                     FileOutputStream output = new FileOutputStream(file)) {
+                    byte[] buffer = new byte[4096];
+                    int n;
+                    while ((n = input.read(buffer)) != -1) {
+                        output.write(buffer, 0, n);
+                    }
+                } catch (IOException ioEx) {
+                    ioEx.printStackTrace();
                 }
-            } catch (IOException ioEx) {
-                ioEx.printStackTrace();
-            }
 
-            LOGGER.info("{} downloaded successfully!", file);
+                LOGGER.info("{} downloaded successfully!", file);
+            }
+        }catch(UnknownHostException uhe){
+            LOGGER.info(String.format("Unable to resolve hostname %s \nException trace %s", url, uhe));
         }
     }
 
