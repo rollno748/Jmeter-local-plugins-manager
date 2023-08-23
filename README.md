@@ -27,11 +27,11 @@ Some organization will not have/provide access to internet on certain hosts - Th
 
 ## Available APIs
 
-| Service            | HTTP Method | URI                                    |
-|:-------------------|:-----------:|:---------------------------------------|
-| App Running Status |     GET     | http://<hostname/IP>:<port>/v1/        |
-| Upload Plugin      |     GET     | http://<hostname/IP>:<port>/v1/upload  |
-| Get Plugins        |     GET     | http://<hostname/IP>:<port>/v1/plugins |
+| Service            | HTTP Method | URI                                     |
+|:-------------------|:-----------:|:----------------------------------------|
+| App Running Status |     GET     | http://<hostname/IP>:\<port>/v1/        |
+| Upload Plugin      |     GET     | http://<hostname/IP>:\<port>/v1/upload  |
+| Get Plugins        |     GET     | http://<hostname/IP>:\<port>/v1/plugins |
 
 
 ## Uploading Custom plugin
