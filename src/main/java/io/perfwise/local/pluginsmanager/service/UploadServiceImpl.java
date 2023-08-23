@@ -1,6 +1,5 @@
 package io.perfwise.local.pluginsmanager.service;
 
-import io.perfwise.local.pluginsmanager.scheduler.ScheduledTasks;
 import org.apache.commons.fileupload.FileItem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
