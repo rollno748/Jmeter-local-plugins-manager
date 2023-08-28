@@ -29,19 +29,17 @@ public class ScheduledTasks extends TimerTask {
     public void run() {
         try {
             JSONArray pluginsArray = HttpRequest.get(props.getProperty("jmeter.plugins.url"));
-            if(isNewPluginsAvailable(pluginsArray)){
-                if(getLocalDBPluginsCount() == 0){
-                    parser.downloadAllPlugins(pluginsArray);
-                }else{
-                    List<String> missingPluginsList = Parse.getMissingPluginsNames(pluginsArray);
-                    if(pluginsArray.length() > missingPluginsList.size()){
-                        parser.downloadMissingPlugins(missingPluginsList, pluginsArray);
-                    }else {
-                        LOGGER.info("Repository is up to date.");
-                    }
-                }
+
+            if(getAvailablePluginsCount(pluginsArray) == 0){
+                Parse.downloadAllPlugins(pluginsArray);
             }else{
-                LOGGER.info("Skipping Downloader - No new plugins available");
+                List<String> missingPluginsList = Parse.getMissingPluginsNames(pluginsArray);
+                if(missingPluginsList.size() > 0){
+                    parser.downloadMissingPlugins(missingPluginsList, pluginsArray);
+                }else{
+                    LOGGER.info("Repository is up to date.");
+                    LOGGER.info("Skipping Downloader - No new plugins available");
+                }
             }
         } catch (IOException | SQLException | InterruptedException e) {
             LOGGER.error("Exception occurred while checking with plugins manager");
@@ -52,11 +50,10 @@ public class ScheduledTasks extends TimerTask {
         LOGGER.debug("Checking for plugin updates from Plugins manager");
     }
 
-    private Boolean isNewPluginsAvailable(JSONArray pluginsArray) throws SQLException, InterruptedException {
-        int publicCount = pluginsArray.length();
+    private int getAvailablePluginsCount(JSONArray pluginsArray) throws SQLException, InterruptedException{
         int localStoreCount = Parse.getLocalPluginCount(pluginsArray);
         setLocalDBPluginsCount(localStoreCount);
-        return publicCount > localStoreCount;
+        return localStoreCount;
     }
 
     public int getLocalDBPluginsCount() {

@@ -1,11 +1,13 @@
 package io.perfwise.local.pluginsmanager.controller;
 
+import io.perfwise.local.pluginsmanager.model.UploadModel;
 import io.perfwise.local.pluginsmanager.service.UploadService;
 import io.perfwise.local.pluginsmanager.service.UploadServiceImpl;
 import io.perfwise.local.pluginsmanager.sqlite.SQLiteConnectionPool;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import spark.Spark;
@@ -94,11 +96,14 @@ public class RestController {
                 return null;
             });
 
+            get("/plugins", (req, res) -> {
+                return null;
+            });
+
             post("/upload", (req, res) -> {
                 req.attribute("org.eclipse.jetty.multipartConfig", new MultipartConfigElement("/temp"));
                 UploadService uploadService = new UploadServiceImpl(RestController.customPluginPath, RestController.libPath);
-                List<FileItem> items = upload.parseRequest(req.raw());
-                String resp = uploadService.handleFileUpload(items);
+                String resp = uploadService.customPluginUpload(upload, req);
                 if(Integer.parseInt(resp) >= 500){
                     return "Something went wrong !";
                 }else{
@@ -116,3 +121,10 @@ public class RestController {
     }
 
 }
+
+//                req.queryMap().toMap().forEach((param, values) -> {
+//                    System.out.println("Parameter: " + param);
+//                    for (String value : values) {
+//                        System.out.println("Value: " + value);
+//                    }
+//                });

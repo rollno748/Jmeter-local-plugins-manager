@@ -26,6 +26,7 @@ import java.io.InputStream;
 import java.net.*;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -42,7 +43,9 @@ public class HttpRequest {
     private static final int MAX_RETRIES = 10;
     private static final long RETRY_INTERVAL_MS = 60000;
     private static final String INSERT_METADATA_INFO = "INSERT INTO metadata (id, version, downloadUrl, libs) VALUES (?, ?, ?, ?)";
+    private static final String SELECT_PLUGIN_VERSION_METADATA = "SELECT COUNT(*) AS COUNT FROM METADATA WHERE ID = ? AND VERSION = ?";
     private static final String INSERT_PLUGIN_INFO = "INSERT INTO plugins (id, name, type, description, helpUrl, markerClass, screenshotUrl, vendor, versions_count) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
 
     public HttpRequest(Properties props){
         this.props = props;
@@ -100,14 +103,6 @@ public class HttpRequest {
         huc.setRequestMethod("GET");
         huc.connect();
         return huc.getResponseCode();
-    }
-
-    public static void fileUploader(String pluginJar, List<String> dependencyJars, String customPluginPath) {
-
-    }
-
-    public static void fileUploader(String pluginJar, String customPluginPath) {
-        fileUploader(pluginJar, null, customPluginPath);
     }
 
     public void downloadPlugins(JSONObject pluginObject) throws URISyntaxException, IOException {
@@ -197,7 +192,25 @@ public class HttpRequest {
         }catch (SQLException | InterruptedException e){
             e.printStackTrace();
         }
+    }
 
+    public boolean isPluginVersionExist(String id, String version){
+        int result = 0;
+        try{
+            if(conn == null){
+                conn = SQLiteConnectionPool.getConnection();
+            }
+            PreparedStatement preparedStatement = conn.prepareStatement(SELECT_PLUGIN_VERSION_METADATA);
+            preparedStatement.setString(1, id);
+            preparedStatement.setString(2, version);
+            ResultSet rs = preparedStatement.executeQuery();
+            result = rs.getInt("COUNT");
+            preparedStatement.close();
+        }catch (SQLException | InterruptedException e){
+            e.printStackTrace();
+        }
+
+        return result > 0;
     }
 
     private void updatePluginInfoInDB(JSONObject pluginObject, String type) {
