@@ -105,6 +105,43 @@ public class HttpRequest {
         return huc.getResponseCode();
     }
 
+    public void downloadMissingPlugins(JSONObject pluginObject) throws URISyntaxException, IOException {
+        JSONObject metaDataObj = new JSONObject();
+        metaDataObj.put("id", pluginObject.getString("id"));
+        JSONObject versionObj = pluginObject.getJSONObject("versions");
+        for (String version : versionObj.keySet()) {
+            if(!isPluginVersionExist(pluginObject.getString("id"), version)){
+                metaDataObj.put("version", version);
+                JSONObject verObj = versionObj.getJSONObject(version);
+                if(!verObj.isNull("downloadUrl")){
+                    String downloadUrl = verObj.getString("downloadUrl");
+                    if(!downloadUrl.contains("%1$s.jar")){
+                        metaDataObj.put("downloadUrl",  downloadUrl.substring(downloadUrl.lastIndexOf('/') + 1));
+                        fileDownloader(this.getProps().getProperty("local.repo.plugins.dir.path"), new URI(downloadUrl).toURL());
+                    }else{
+                        List<String> availableVersions = this.getAvailableLibraryVersions(downloadUrl);
+                        for (String ver : availableVersions){
+                            String url = downloadUrl.replace("%1$s", ver);
+                            metaDataObj.put("downloadUrl",  url.substring(url.lastIndexOf('/') + 1));
+                            fileDownloader(this.getProps().getProperty("local.repo.plugins.dir.path"), new URI(url).toURL());
+                        }
+                    }
+                    if(verObj.has("libs")){
+                        JSONObject libsObject = verObj.getJSONObject("libs");
+                        metaDataObj.put("libs", libsObject.toString());
+                        for (String lib : libsObject.keySet()) {
+                            String libUrl = libsObject.getString(lib);
+                            fileDownloader(this.getProps().getProperty("local.repo.dependencies.dir.path"), new URI(libUrl).toURL());
+                        }
+                    }
+                }
+                this.updatePluginMetadataInfo(metaDataObj);
+                LOGGER.info("Downloaded {} plugin - version {}", pluginObject.getString("id"), version);
+            }
+        }
+        this.updatePluginInfoInDB(pluginObject, "public");
+    }
+
     public void downloadPlugins(JSONObject pluginObject) throws URISyntaxException, IOException {
         JSONObject metaDataObj = new JSONObject();
         metaDataObj.put("id", pluginObject.getString("id"));
@@ -253,4 +290,5 @@ public class HttpRequest {
     public void setProps(Properties props) {
         this.props = props;
     }
+
 }

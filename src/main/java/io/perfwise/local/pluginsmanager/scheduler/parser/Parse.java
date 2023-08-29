@@ -42,8 +42,9 @@ public class Parse {
         }
     }
 
-    public static List<String> getMissingPluginsNames(JSONArray jmeterRepoJson) {
-        List<String> missingPluginsInfo = new ArrayList<>();;
+    public static JSONArray getMissingPluginsNames(JSONArray jmeterRepoJson) {
+//        List<String> missingPluginsInfo = new ArrayList<>();
+        JSONArray missingPluginArray = new JSONArray();
         for (Object plugin : jmeterRepoJson) {
             JSONObject pluginObj = (JSONObject) plugin;
             String id = pluginObj.getString("id") ;
@@ -51,11 +52,12 @@ public class Parse {
 
             for (String key : versions.keySet()) {
                 if(!httpRequest.isPluginVersionExist(id, key)){
-                    missingPluginsInfo.add(id);
+//                    missingPluginsInfo.add(id);
+                    missingPluginArray.put(pluginObj);
                 }
             }
         }
-        return missingPluginsInfo;
+        return missingPluginArray;
     }
 
     public static void downloadAllPlugins(JSONArray jmeterRepoJson) throws URISyntaxException, IOException {
@@ -100,11 +102,9 @@ public class Parse {
         return availableCount;
     }
 
-    public void downloadMissingPlugins(List<String> missingPluginsList, JSONArray pluginsArray) throws URISyntaxException, IOException {
-        for (int i = 0; i < pluginsArray.length(); i++) {
-            if(missingPluginsList.contains(pluginsArray.getJSONObject(i).getString("id"))){
-                httpRequest.downloadPlugins(pluginsArray.getJSONObject(i));
-            }
+    public void downloadMissingPlugins(JSONArray missingPluginsList) throws URISyntaxException, IOException {
+        for (int i = 0; i < missingPluginsList.length(); i++) {
+            httpRequest.downloadMissingPlugins(missingPluginsList.getJSONObject(i));
         }
     }
 

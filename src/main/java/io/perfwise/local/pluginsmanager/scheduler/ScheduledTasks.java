@@ -9,7 +9,6 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
-import java.util.List;
 import java.util.Properties;
 import java.util.TimerTask;
 
@@ -33,11 +32,11 @@ public class ScheduledTasks extends TimerTask {
             if(getAvailablePluginsCount(pluginsArray) == 0){
                 Parse.downloadAllPlugins(pluginsArray);
             }else{
-                List<String> missingPluginsList = Parse.getMissingPluginsNames(pluginsArray);
-                if(missingPluginsList.size() > 0){
-                    parser.downloadMissingPlugins(missingPluginsList, pluginsArray);
+                JSONArray missingPluginsList = Parse.getMissingPluginsNames(pluginsArray);
+                if(missingPluginsList.length() > 0){
+                    LOGGER.info("{} New Plugin(s) found to download.. ", missingPluginsList.length());
+                    parser.downloadMissingPlugins(missingPluginsList);
                 }else{
-                    LOGGER.info("Repository is up to date.");
                     LOGGER.info("Skipping Downloader - No new plugins available");
                 }
             }
