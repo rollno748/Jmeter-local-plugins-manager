@@ -45,6 +45,12 @@ public class HttpRequest {
     private static final String INSERT_METADATA_INFO = "INSERT INTO metadata (id, version, downloadUrl, libs) VALUES (?, ?, ?, ?)";
     private static final String SELECT_PLUGIN_VERSION_METADATA = "SELECT COUNT(*) AS COUNT FROM METADATA WHERE ID = ? AND VERSION = ?";
     private static final String INSERT_PLUGIN_INFO = "INSERT INTO plugins (id, name, type, description, helpUrl, markerClass, screenshotUrl, vendor, versions_count) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    private static final String SELECT_PLUGINS = "SELECT ID, NAME, DESCRIPTION, HELPURL, MARKERCLASS, SCREENSHOTURL, VENDOR FROM plugins";
+    private static final String SELECT_PLUGINS_WITH_FILTER = "SELECT ID, NAME, DESCRIPTION, HELPURL, MARKERCLASS, SCREENSHOTURL, VENDOR FROM plugins WHERE type = ?";
+    private static final String SELECT_METADATA_BY_ID = "SELECT ID, VERSION, DOWNLOADURL, LIBS FROM metadata WHERE ID = ?";
+
+
+
 
 
     public HttpRequest(Properties props){
@@ -185,6 +191,65 @@ public class HttpRequest {
             libName = matcher.group("libName");
         }
         return fetchAvailableVersions(libName);
+    }
+
+    public JSONArray getAllPlugins() {
+        JSONArray jsonArray = new JSONArray();
+        try{
+            if(conn == null){
+                conn = SQLiteConnectionPool.getConnection();
+            }
+            PreparedStatement preparedStatement = conn.prepareStatement(SELECT_PLUGINS);
+            ResultSet rs = preparedStatement.executeQuery();
+
+            while (rs.next()) {
+                JSONObject pluginObject = new JSONObject();
+                JSONObject libraryObj = new JSONObject();
+
+                pluginObject.put("id", rs.getString("id"));
+                pluginObject.put("name", rs.getString("name"));
+                pluginObject.put("description", rs.getString("description"));
+                pluginObject.put("helpUrl", rs.getString("helpUrl"));
+                pluginObject.put("markerClass", rs.getString("markerClass"));
+                pluginObject.put("screenshotUrl", rs.getString("screenshotUrl"));
+                pluginObject.put("vendor", rs.getString("vendor"));
+                libraryObj = this.getDependentLibraryObj(rs.getString("id"));
+                pluginObject.put("versions", libraryObj);
+
+                jsonArray.put(pluginObject);
+            }
+            preparedStatement.close();
+        }catch(SQLException | InterruptedException e){
+            LOGGER.error("Exception occurred while fetching plugins information");
+        }finally {
+            SQLiteConnectionPool.releaseConnection(conn);
+        }
+        return jsonArray;
+    }
+
+    private JSONObject getDependentLibraryObj(String id) {
+        JSONObject libraryObj = new JSONObject();
+        try{
+            if(conn == null){
+                conn = SQLiteConnectionPool.getConnection();
+            }
+            PreparedStatement preparedStatement = conn.prepareStatement(SELECT_METADATA_BY_ID);
+            preparedStatement.setString(1, id);
+            ResultSet rs = preparedStatement.executeQuery();
+
+            while (rs.next()) {
+                JSONObject versionsObj = new JSONObject();
+                versionsObj.put("downloadUrl", rs.getString("downloadUrl"));
+                versionsObj.put("libs", rs.getString("libs"));
+                libraryObj.put(rs.getString("version"), versionsObj);
+            }
+            preparedStatement.close();
+        }catch(SQLException | InterruptedException e){
+            LOGGER.error("Exception occurred while fetching plugins information");
+        }finally {
+            SQLiteConnectionPool.releaseConnection(conn);
+        }
+        return libraryObj;
     }
 
     private List<String> fetchAvailableVersions(String libName) {

@@ -102,6 +102,18 @@ public class Parse {
         return availableCount;
     }
 
+    public static JSONArray getAllPlugins() {
+        return httpRequest.getAllPlugins();
+    }
+
+    public static JSONArray getPublicPlugins() {
+        return null;
+    }
+
+    public static JSONArray getCustomPlugins() {
+        return null;
+    }
+
     public void downloadMissingPlugins(JSONArray missingPluginsList) throws URISyntaxException, IOException {
         for (int i = 0; i < missingPluginsList.length(); i++) {
             httpRequest.downloadMissingPlugins(missingPluginsList.getJSONObject(i));

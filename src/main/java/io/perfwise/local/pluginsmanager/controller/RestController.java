@@ -1,13 +1,12 @@
 package io.perfwise.local.pluginsmanager.controller;
 
-import io.perfwise.local.pluginsmanager.model.UploadModel;
+import io.perfwise.local.pluginsmanager.service.PluginService;
+import io.perfwise.local.pluginsmanager.service.PluginServiceImpl;
 import io.perfwise.local.pluginsmanager.service.UploadService;
 import io.perfwise.local.pluginsmanager.service.UploadServiceImpl;
 import io.perfwise.local.pluginsmanager.sqlite.SQLiteConnectionPool;
-import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
-import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import spark.Spark;
@@ -15,7 +14,6 @@ import spark.Spark;
 import javax.servlet.MultipartConfigElement;
 import java.io.File;
 import java.net.InetAddress;
-import java.util.List;
 import java.util.Properties;
 
 import static spark.Spark.*;
@@ -35,6 +33,13 @@ public class RestController {
 
     public RestController() {
     }
+
+    public enum Plugins {
+        DEFAULT,
+        PUBLIC,
+        CUSTOM
+    }
+
     public RestController(Properties props) {
         this.serverPort = Integer.parseInt(props.getProperty("server.port"));
         uriPath = props.getProperty("server.uri.path");
@@ -97,7 +102,18 @@ public class RestController {
             });
 
             get("/plugins", (req, res) -> {
-                return null;
+                String type = req.queryParams("type");
+                PluginService pluginService = new PluginServiceImpl();
+
+                if (type == null || type.isEmpty()) {
+                    return pluginService.getAllPlugins();
+                } else if (type.equalsIgnoreCase(Plugins.PUBLIC.toString())) {
+                    return pluginService.getPublicPlugins();
+                } else if (type.equalsIgnoreCase(Plugins.CUSTOM.toString())) {
+                    return pluginService.getCustomPlugins();
+                } else {
+                    return "Invalid plugin type.";
+                }
             });
 
             post("/upload", (req, res) -> {
