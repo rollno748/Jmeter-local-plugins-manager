@@ -246,8 +246,6 @@ public class HttpRequest {
             preparedStatement.close();
         }catch(SQLException | InterruptedException e){
             LOGGER.error("Exception occurred while fetching plugins information");
-        }finally {
-            SQLiteConnectionPool.releaseConnection(conn);
         }
         return libraryObj;
     }

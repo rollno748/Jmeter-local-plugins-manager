@@ -102,6 +102,7 @@ public class RestController {
             });
 
             get("/plugins", (req, res) -> {
+                res.type("application/json");
                 String type = req.queryParams("type");
                 PluginService pluginService = new PluginServiceImpl();
 
