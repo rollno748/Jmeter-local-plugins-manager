@@ -170,11 +170,11 @@ public class HttpRequest {
                 }
                if(verObj.has("libs")){
                     JSONObject libsObject = verObj.getJSONObject("libs");
-                    metaDataObj.put("libs", libsObject.toString());
                     for (String lib : libsObject.keySet()) {
                         String libUrl = libsObject.getString(lib);
                         fileDownloader(this.getProps().getProperty("local.repo.dependencies.dir.path"), new URI(libUrl).toURL());
                     }
+                   metaDataObj.put("libs", libsObject);
                 }
             }
             this.updatePluginMetadataInfo(metaDataObj);
@@ -193,13 +193,16 @@ public class HttpRequest {
         return fetchAvailableVersions(libName);
     }
 
-    public JSONArray getAllPlugins() {
+    public JSONArray fetchPluginsFromLocalDB(String query, String type){
         JSONArray jsonArray = new JSONArray();
         try{
             if(conn == null){
                 conn = SQLiteConnectionPool.getConnection();
             }
-            PreparedStatement preparedStatement = conn.prepareStatement(SELECT_PLUGINS);
+            PreparedStatement preparedStatement = conn.prepareStatement(query);
+            if(type != null){
+                preparedStatement.setString(1, type);
+            }
             ResultSet rs = preparedStatement.executeQuery();
 
             while (rs.next()) {
@@ -213,7 +216,7 @@ public class HttpRequest {
                 pluginObject.put("markerClass", rs.getString("markerClass"));
                 pluginObject.put("screenshotUrl", rs.getString("screenshotUrl"));
                 pluginObject.put("vendor", rs.getString("vendor"));
-                libraryObj = this.getDependentLibraryObj(rs.getString("id"));
+                libraryObj = this.getDependentLibraryObj(rs.getString("id"), type);
                 pluginObject.put("versions", libraryObj);
 
                 jsonArray.put(pluginObject);
@@ -221,13 +224,44 @@ public class HttpRequest {
             preparedStatement.close();
         }catch(SQLException | InterruptedException e){
             LOGGER.error("Exception occurred while fetching plugins information");
-        }finally {
+        } catch (UnknownHostException e) {
+            throw new RuntimeException(e);
+        } finally {
             SQLiteConnectionPool.releaseConnection(conn);
         }
         return jsonArray;
     }
 
-    private JSONObject getDependentLibraryObj(String id) {
+    public JSONArray getAllPlugins() {
+        JSONArray publicPluginArray = getPublicPlugins();
+        JSONArray customPluginArray = getCustomPlugins();
+
+        for(Object obj: customPluginArray){
+            publicPluginArray.put((JSONObject) obj);
+        }
+        return publicPluginArray;
+    }
+
+
+    public JSONArray getPublicPlugins() {
+        return fetchPluginsFromLocalDB(SELECT_PLUGINS_WITH_FILTER, "public");
+    }
+
+    public JSONArray getCustomPlugins() {
+        return fetchPluginsFromLocalDB(SELECT_PLUGINS_WITH_FILTER, "custom");
+    }
+
+    private JSONObject getDependentLibraryObj(String id, String type) throws UnknownHostException {
+
+        String host = InetAddress.getLocalHost().getHostAddress();
+        String libUrl = String.format("http://%s:%s/%s/", host, props.getProperty("server.port"), "libs");
+        String pluginUrl = null;
+        if(type.equals("public")){
+            pluginUrl = String.format("http://%s:%s/%s/", host, props.getProperty("server.port"), "plugins");
+        }else{
+            pluginUrl = String.format("http://%s:%s/%s/", host, props.getProperty("server.port"), "custom");
+        }
+
         JSONObject libraryObj = new JSONObject();
         try{
             if(conn == null){
@@ -239,8 +273,8 @@ public class HttpRequest {
 
             while (rs.next()) {
                 JSONObject versionsObj = new JSONObject();
-                versionsObj.put("downloadUrl", rs.getString("downloadUrl"));
-                versionsObj.put("libs", rs.getString("libs"));
+                versionsObj.put("downloadUrl", pluginUrl + rs.getString("downloadUrl"));
+                versionsObj.put("libs", processLibs(rs.getString("libs"), libUrl));
                 libraryObj.put(rs.getString("version"), versionsObj);
             }
             preparedStatement.close();
@@ -248,6 +282,19 @@ public class HttpRequest {
             LOGGER.error("Exception occurred while fetching plugins information");
         }
         return libraryObj;
+    }
+
+    private JSONObject processLibs(String libs, String libUrl) {
+        JSONObject libraryObject = new JSONObject();
+        if (libs != null){
+            JSONObject jsonObject = new JSONObject(libs);
+            for (String key : jsonObject.keySet()) {
+                String jVal = (String) jsonObject.get(key);
+                String val = libUrl + jVal.substring(jVal.lastIndexOf('/') + 1);
+                libraryObject.put(key, val);
+            }
+        }
+        return libraryObject;
     }
 
     private List<String> fetchAvailableVersions(String libName) {
@@ -353,5 +400,4 @@ public class HttpRequest {
     public void setProps(Properties props) {
         this.props = props;
     }
-
 }

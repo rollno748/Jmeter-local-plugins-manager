@@ -12,8 +12,6 @@ import java.net.URISyntaxException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Properties;
 
 public class Parse {
@@ -107,11 +105,11 @@ public class Parse {
     }
 
     public static JSONArray getPublicPlugins() {
-        return null;
+        return httpRequest.getPublicPlugins();
     }
 
     public static JSONArray getCustomPlugins() {
-        return null;
+        return httpRequest.getCustomPlugins();
     }
 
     public void downloadMissingPlugins(JSONArray missingPluginsList) throws URISyntaxException, IOException {
