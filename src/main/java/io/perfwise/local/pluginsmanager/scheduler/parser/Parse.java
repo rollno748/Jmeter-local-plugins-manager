@@ -18,8 +18,6 @@ public class Parse {
     private static final Logger LOGGER = LoggerFactory.getLogger(Parse.class);
     private static Connection conn;
     private static HttpRequest httpRequest = null;
-    private static final String PLUGINS_INFO = "SELECT ID, VERSIONS_COUNT FROM PLUGINS WHERE TYPE = 'public'";
-    private static final String METADATA_INFO = "SELECT ID, VERSION FROM METADATA";
     private static final String PLUGINS_COUNT = "SELECT COUNT(ID) AS COUNT FROM PLUGINS";
     private static final String PLUGINS_METADATA_BY_ID = "SELECT COUNT(*) AS COUNT FROM METADATA WHERE ID = ?";
 

@@ -74,6 +74,7 @@ public class UploadServiceImpl implements UploadService{
             }
             return "200";
         }catch(Exception e){
+            LOGGER.error("Exception occurred while Uploading custom plugins: ");
             e.printStackTrace();
             return "500";
         }

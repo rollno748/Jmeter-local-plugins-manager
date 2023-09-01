@@ -14,6 +14,8 @@ import spark.Spark;
 import javax.servlet.MultipartConfigElement;
 import java.io.File;
 import java.net.InetAddress;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Properties;
 
 import static spark.Spark.*;
@@ -21,13 +23,14 @@ import static spark.Spark.*;
 public class RestController {
     private static final Logger LOGGER = LoggerFactory.getLogger(RestController.class);
     private static String uriPath;
-    private static String customPluginPath;
-    private static String libPath;
+    private Path basePath;
+    private String pluginsPath;
+    private String customPluginsPath;
+    private String libPath;
     private int serverPort;
     private int MIN_THREADS;
     private int MAX_THREADS;
     private int TIMEOUT;
-    private String fileServerLocation;
     private static long startTime;
     private SQLiteConnectionPool connectionPool;
 
@@ -43,9 +46,10 @@ public class RestController {
     public RestController(Properties props) {
         this.serverPort = Integer.parseInt(props.getProperty("server.port"));
         uriPath = props.getProperty("server.uri.path");
-        RestController.customPluginPath = props.getProperty("local.custom.plugins.dir.path");
-        RestController.libPath = props.getProperty("local.repo.dependencies.dir.path");
-        this.fileServerLocation = props.getProperty("local.sqlite.db.path");
+        this.basePath = Paths.get(props.getProperty("local.repo.path"));
+        this.pluginsPath = this.basePath.resolve("plugins").toString();
+        this.libPath = this.basePath.resolve("libs").toString();
+        this.customPluginsPath = this.basePath.resolve("custom").toString();
         this.MIN_THREADS = Integer.parseInt(props.getProperty("db.min.threads"));
         this.MAX_THREADS = Integer.parseInt(props.getProperty("db.max.threads"));
         this.TIMEOUT = Integer.parseInt(props.getProperty("db.timeout.secs"));
@@ -62,9 +66,9 @@ public class RestController {
     public void startRestServer() {
         try {
             staticFiles.location("/public");
-            staticFiles.externalLocation(this.fileServerLocation);
+            staticFiles.externalLocation(this.basePath.toString());
             port(serverPort);
-            connectionPool = SQLiteConnectionPool.getInstance(fileServerLocation, MIN_THREADS, MAX_THREADS, TIMEOUT);
+            connectionPool = SQLiteConnectionPool.getInstance(this.basePath.toString(), MIN_THREADS, MAX_THREADS, TIMEOUT);
             init();
             awaitInitialization();
             loadRestApiServices();
@@ -119,7 +123,7 @@ public class RestController {
 
             post("/upload", (req, res) -> {
                 req.attribute("org.eclipse.jetty.multipartConfig", new MultipartConfigElement("/temp"));
-                UploadService uploadService = new UploadServiceImpl(RestController.customPluginPath, RestController.libPath);
+                UploadService uploadService = new UploadServiceImpl(this.customPluginsPath, this.libPath);
                 String resp = uploadService.customPluginUpload(upload, req);
                 if(Integer.parseInt(resp) >= 500){
                     return "Something went wrong !";
@@ -138,10 +142,3 @@ public class RestController {
     }
 
 }
-
-//                req.queryMap().toMap().forEach((param, values) -> {
-//                    System.out.println("Parameter: " + param);
-//                    for (String value : values) {
-//                        System.out.println("Value: " + value);
-//                    }
-//                });

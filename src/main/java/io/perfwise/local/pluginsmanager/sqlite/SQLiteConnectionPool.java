@@ -30,10 +30,17 @@ public class SQLiteConnectionPool {
     }
 
     private SQLiteConnectionPool(String dbPath, int minPoolSize, int maxPoolSize, int timeoutSeconds) {
+        String pathSeparator = System.getProperty("file.separator");
+        if (!dbPath.endsWith(pathSeparator)) {
+            dbPath += pathSeparator + DBFILENAME;
+        }else{
+            dbPath += DBFILENAME;
+        }
+
         setMinPoolSize(minPoolSize);
         setMaxPoolSize(maxPoolSize);
         setTimeoutSeconds(timeoutSeconds);
-        setDB_FILE_PATH(dbPath + DBFILENAME);
+        setDB_FILE_PATH(dbPath);
         connections = new ArrayBlockingQueue<>(maxPoolSize);
 
         for (int i = 0; i < maxPoolSize; i++) {
@@ -85,7 +92,7 @@ public class SQLiteConnectionPool {
         String pathSeparator = System.getProperty("file.separator");
         boolean result = false;
         if (!dbFilePath.endsWith(pathSeparator)) {
-            dbFilePath += pathSeparator;
+            dbFilePath += pathSeparator + DBFILENAME;
         }else{
             dbFilePath += DBFILENAME;
         }

@@ -4,37 +4,30 @@ import io.perfwise.local.pluginsmanager.sqlite.SQLiteConnectionPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.Properties;
 
 public class PreCheckValidation {
     private static final Logger LOGGER = LoggerFactory.getLogger(PreCheckValidation.class);
-    private final Properties props;
+    private final Path basePath;
     private final DirectoryOps directoryOps;
 
     public PreCheckValidation(Properties props) {
-        this.props = props;
+        this.basePath = Paths.get(props.getProperty("local.repo.path"));
         this.directoryOps = new DirectoryOps();
     }
 
     public boolean validateDirectoryPresence() {
-        String pluginsPath = props.getProperty("local.repo.plugins.dir.path");
-        if(pluginsPath == null || pluginsPath.isEmpty()) {
-            LOGGER.error("Plugins directory path is invalid: {}", pluginsPath);
+        if(basePath == null || basePath.toString().isEmpty()) {
+            LOGGER.error("Plugins directory path is invalid: {}", basePath);
             return false;
         }
 
-        String dependenciesPath = props.getProperty("local.repo.dependencies.dir.path");
-        if(dependenciesPath == null || dependenciesPath.isEmpty()) {
-            LOGGER.error("Dependencies directory path is invalid: {}", dependenciesPath);
-            return false;
-        }
-
-        String customPluginsPath = props.getProperty("local.custom.plugins.dir.path");
-        if(customPluginsPath == null || customPluginsPath.isEmpty()) {
-            LOGGER.error("Custom Plugins directory path is invalid: {}", customPluginsPath);
-            return false;
-        }
+        String pluginsPath = this.basePath.resolve("plugins").toString();
+        String dependenciesPath = this.basePath.resolve("libs").toString();
+        String customPluginsPath = this.basePath.resolve("custom").toString();
 
         if (directoryOps.createDirectory(pluginsPath) && directoryOps.createDirectory(dependenciesPath) && directoryOps.createDirectory(customPluginsPath)){
             LOGGER.info("Created local plugins directory successfully !");
@@ -56,7 +49,7 @@ public class PreCheckValidation {
     }
 
     private boolean createLocalDatabaseIfNotPresent() {
-        return SQLiteConnectionPool.createLocalDatabase(props.getProperty("local.sqlite.db.path"));
+        return SQLiteConnectionPool.createLocalDatabase(this.basePath.toString());
     }
 
 }
