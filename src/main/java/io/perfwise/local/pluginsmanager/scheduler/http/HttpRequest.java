@@ -274,7 +274,9 @@ public class HttpRequest {
             while (rs.next()) {
                 JSONObject versionsObj = new JSONObject();
                 versionsObj.put("downloadUrl", pluginUrl + rs.getString("downloadUrl"));
-                versionsObj.put("libs", processLibs(rs.getString("libs"), libUrl));
+                if (rs.getString("libs") != null){
+                    versionsObj.put("libs", processLibs(rs.getString("libs"), libUrl));
+                }
                 libraryObj.put(rs.getString("version"), versionsObj);
             }
             preparedStatement.close();
@@ -286,13 +288,11 @@ public class HttpRequest {
 
     private JSONObject processLibs(String libs, String libUrl) {
         JSONObject libraryObject = new JSONObject();
-        if (libs != null){
-            JSONObject jsonObject = new JSONObject(libs);
-            for (String key : jsonObject.keySet()) {
-                String jVal = (String) jsonObject.get(key);
-                String val = libUrl + jVal.substring(jVal.lastIndexOf('/') + 1);
-                libraryObject.put(key, val);
-            }
+        JSONObject jsonObject = new JSONObject(libs);
+        for (String key : jsonObject.keySet()) {
+            String jVal = (String) jsonObject.get(key);
+            String val = libUrl + jVal.substring(jVal.lastIndexOf('/') + 1);
+            libraryObject.put(key, val);
         }
         return libraryObject;
     }
