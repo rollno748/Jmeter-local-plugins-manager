@@ -41,7 +41,6 @@ public class Parse {
     }
 
     public static JSONArray getMissingPluginsNames(JSONArray jmeterRepoJson) {
-//        List<String> missingPluginsInfo = new ArrayList<>();
         JSONArray missingPluginArray = new JSONArray();
         for (Object plugin : jmeterRepoJson) {
             JSONObject pluginObj = (JSONObject) plugin;
@@ -50,7 +49,6 @@ public class Parse {
 
             for (String key : versions.keySet()) {
                 if(!httpRequest.isPluginVersionExist(id, key)){
-//                    missingPluginsInfo.add(id);
                     missingPluginArray.put(pluginObj);
                 }
             }
