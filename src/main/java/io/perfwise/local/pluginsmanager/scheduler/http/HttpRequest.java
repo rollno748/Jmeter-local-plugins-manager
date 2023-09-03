@@ -43,14 +43,11 @@ public class HttpRequest {
     private static final int MAX_RETRIES = 10;
     private static final long RETRY_INTERVAL_MS = 60000;
     private static final String INSERT_METADATA_INFO = "INSERT INTO metadata (id, version, downloadUrl, libs) VALUES (?, ?, ?, ?)";
-    private static final String SELECT_PLUGIN_VERSION_METADATA = "SELECT COUNT(*) AS COUNT FROM METADATA WHERE ID = ? AND VERSION = ?";
     private static final String INSERT_PLUGIN_INFO = "INSERT INTO plugins (id, name, type, description, helpUrl, markerClass, screenshotUrl, vendor, versions_count) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    private static final String SELECT_PLUGIN_VERSION_METADATA = "SELECT COUNT(*) AS COUNT FROM METADATA WHERE ID = ? AND VERSION = ?";
     private static final String SELECT_PLUGINS = "SELECT ID, NAME, DESCRIPTION, HELPURL, MARKERCLASS, SCREENSHOTURL, VENDOR FROM plugins";
     private static final String SELECT_PLUGINS_WITH_FILTER = "SELECT ID, NAME, DESCRIPTION, HELPURL, MARKERCLASS, SCREENSHOTURL, VENDOR FROM plugins WHERE type = ?";
     private static final String SELECT_METADATA_BY_ID = "SELECT ID, VERSION, DOWNLOADURL, LIBS FROM metadata WHERE ID = ?";
-
-
-
 
 
     public HttpRequest(Properties props){
@@ -196,7 +193,7 @@ public class HttpRequest {
     public JSONArray fetchPluginsFromLocalDB(String query, String type){
         JSONArray jsonArray = new JSONArray();
         try{
-            if(conn == null){
+            if(conn == null || conn.isClosed()){
                 conn = SQLiteConnectionPool.getConnection();
             }
             PreparedStatement preparedStatement = conn.prepareStatement(query);
@@ -207,7 +204,7 @@ public class HttpRequest {
 
             while (rs.next()) {
                 JSONObject pluginObject = new JSONObject();
-                JSONObject libraryObj = new JSONObject();
+                JSONObject libraryObj;
 
                 pluginObject.put("id", rs.getString("id"));
                 pluginObject.put("name", rs.getString("name"));
@@ -218,7 +215,6 @@ public class HttpRequest {
                 pluginObject.put("vendor", rs.getString("vendor"));
                 libraryObj = this.getDependentLibraryObj(rs.getString("id"), type);
                 pluginObject.put("versions", libraryObj);
-
                 jsonArray.put(pluginObject);
             }
             preparedStatement.close();
@@ -233,6 +229,7 @@ public class HttpRequest {
     }
 
     public JSONArray getAllPlugins() {
+//        JSONArray pluginsArray = getCombinedPlugins();
         JSONArray publicPluginArray = getPublicPlugins();
         JSONArray customPluginArray = getCustomPlugins();
 
@@ -242,6 +239,9 @@ public class HttpRequest {
         return publicPluginArray;
     }
 
+    private JSONArray getCombinedPlugins() {
+        return fetchPluginsFromLocalDB(SELECT_PLUGINS, "all");
+    }
 
     public JSONArray getPublicPlugins() {
         return fetchPluginsFromLocalDB(SELECT_PLUGINS_WITH_FILTER, "public");
@@ -316,7 +316,7 @@ public class HttpRequest {
         return versions;
     }
 
-    private void updatePluginMetadataInfo(JSONObject metaDataObj) {
+    public void updatePluginMetadataInfo(JSONObject metaDataObj) {
         MetadataModel metadataModel = new Gson().fromJson(String.valueOf(metaDataObj), MetadataModel.class);
         try{
             if(conn == null){
@@ -360,6 +360,35 @@ public class HttpRequest {
         return result > 0;
     }
 
+    public void updateCustomPluginInfoInDB(JSONObject pluginModel) {
+        try{
+            if(conn == null){
+                conn = SQLiteConnectionPool.getConnection();
+            }
+
+            PreparedStatement preparedStatement = conn.prepareStatement(INSERT_PLUGIN_INFO);
+            preparedStatement.setString(1, pluginModel.getString("id"));
+            preparedStatement.setString(2, pluginModel.getString("name"));
+            preparedStatement.setString(3, "custom");
+            preparedStatement.setString(4, pluginModel.getString("description"));
+            preparedStatement.setString(5, pluginModel.getString("helpUrl"));
+            preparedStatement.setString(6, pluginModel.getString("markerClass"));
+            preparedStatement.setString(7, pluginModel.getString("screenshotUrl"));
+            preparedStatement.setString(8, pluginModel.getString("vendor"));
+            preparedStatement.setDouble(9, pluginModel.getDouble("version_count"));
+
+            int rowsInserted = preparedStatement.executeUpdate();
+            if (rowsInserted > 0) {
+                System.out.println("Data inserted successfully!");
+            } else {
+                System.out.println("Failed to insert data.");
+            }
+            preparedStatement.close();
+        }catch (SQLException | InterruptedException e){
+            e.printStackTrace();
+        }
+    }
+
     private void updatePluginInfoInDB(JSONObject pluginObject, String type) {
         int versionsCount = pluginObject.getJSONObject("versions").length();
         pluginObject.put("versions_count", versionsCount);
@@ -400,4 +429,5 @@ public class HttpRequest {
     public void setProps(Properties props) {
         this.props = props;
     }
+
 }

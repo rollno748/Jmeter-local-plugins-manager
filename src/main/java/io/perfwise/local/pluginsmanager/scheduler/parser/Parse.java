@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Properties;
@@ -78,13 +79,24 @@ public class Parse {
         return localStoreCount;
     }
 
-    public static int availablePluginsCount(String[] ids) throws SQLException, InterruptedException{
+    public static void addPluginDataToDB(JSONObject pluginObj) throws SQLException, InterruptedException {
+        String type = "custom";
+        httpRequest.updateCustomPluginInfoInDB(pluginObj);
+    }
+
+    public static void addMetaDataToDB(JSONObject metaDataObj) {
+        httpRequest.updatePluginMetadataInfo(metaDataObj);
+    }
+
+    public static int availablePluginsCount(String id) throws SQLException, InterruptedException{
         int availableCount = 0;
         conn = SQLiteConnectionPool.getConnection();
 
         if(!conn.isClosed()){
             try{
-                ResultSet rs = conn.createStatement().executeQuery(PLUGINS_METADATA_BY_ID);
+                PreparedStatement preparedStatement = conn.prepareStatement(PLUGINS_METADATA_BY_ID);
+                preparedStatement.setString(1, id);
+                ResultSet rs = preparedStatement.executeQuery();
                 availableCount = rs.getInt("COUNT");
             } catch (SQLException e) {
                 LOGGER.error("Exception occurred while executing SQL statement");

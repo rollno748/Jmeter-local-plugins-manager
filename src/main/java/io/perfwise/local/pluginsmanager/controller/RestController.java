@@ -5,6 +5,7 @@ import io.perfwise.local.pluginsmanager.service.PluginServiceImpl;
 import io.perfwise.local.pluginsmanager.service.UploadService;
 import io.perfwise.local.pluginsmanager.service.UploadServiceImpl;
 import io.perfwise.local.pluginsmanager.sqlite.SQLiteConnectionPool;
+import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.slf4j.Logger;
@@ -16,6 +17,7 @@ import java.io.File;
 import java.net.InetAddress;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Properties;
 
 import static spark.Spark.*;
@@ -96,7 +98,13 @@ public class RestController {
                 long hours = uptimeSeconds / 3600;
                 long minutes = (uptimeSeconds % 3600) / 60;
                 long seconds = uptimeSeconds % 60;
-                return String.format("Application is up and running<br>Uptime: %d hours, %d minutes, %d seconds", hours, minutes, seconds);
+                String uptimeMessage = String.format("Uptime: %d hours, %d minutes, %d seconds", hours, minutes, seconds);
+
+                // Create an HTML response with the uptime information in a box
+                return "<html><body><div style='border: 1px solid #ccc; padding: 50px; width: 1750px; text-align: center;'>" +
+                        "<h1>Application is up and running</h1>" +
+                        "<p>" + uptimeMessage + "</p>" +
+                        "</div></body></html>";
             });
 
             get("/upload", (req, res) -> {
@@ -124,7 +132,7 @@ public class RestController {
             post("/upload", (req, res) -> {
                 req.attribute("org.eclipse.jetty.multipartConfig", new MultipartConfigElement("/temp"));
                 UploadService uploadService = new UploadServiceImpl(this.customPluginsPath, this.libPath);
-                String resp = uploadService.customPluginUpload(upload, req);
+                String resp = uploadService.customPluginUpload(req, upload);
                 if(Integer.parseInt(resp) >= 500){
                     return "Something went wrong !";
                 }else{

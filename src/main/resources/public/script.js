@@ -78,13 +78,13 @@ function submitForm() {
         };
         xhr.send(formData);
 
-        // Redirect the user to the success page.
-        xhr.onload = function() {
-            if (xhr.status === 200) {
-                alert("Success");
-            } else {
-                alert("Something went wrong.");
-            }
-        };
+//        // Redirect the user to the success page.
+//        xhr.onload = function() {
+//            if (xhr.status === 200) {
+//                alert("Success");
+//            } else {
+//                alert("Something went wrong.");
+//            }
+//        };
     }
 }

@@ -2,21 +2,22 @@ package io.perfwise.local.pluginsmanager.service;
 
 import io.perfwise.local.pluginsmanager.scheduler.http.HttpRequest;
 import io.perfwise.local.pluginsmanager.scheduler.parser.Parse;
-import org.apache.commons.fileupload.FileItem;
-import org.apache.commons.fileupload.FileUploadException;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import spark.Request;
 
+import javax.servlet.ServletException;
+import javax.servlet.http.Part;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.List;
+import java.util.Collection;
 
 public class UploadServiceImpl implements UploadService{
     private static final Logger LOGGER = LoggerFactory.getLogger(UploadServiceImpl.class);
@@ -29,64 +30,87 @@ public class UploadServiceImpl implements UploadService{
     }
 
     @Override
-    public String customPluginUpload(ServletFileUpload upload, Request req) throws FileUploadException, SQLException, InterruptedException {
+    public String customPluginUpload(Request req, ServletFileUpload servletFileUpload) throws SQLException, InterruptedException, IOException {
+        String result = null;
+        Collection<Part> dependencyJars = null;
         JSONObject pluginObj = new JSONObject();
         JSONObject metaDataObj = new JSONObject();
         HttpRequest httpRequest = Parse.getHttpRequest();
 
-        int versionCount = Parse.availablePluginsCount(req.queryMap("id").values());
+        String id = req.queryMap("id").values()[0];
+        String version = req.queryMap("version").values()[0];
 
-        pluginObj.put("id", req.queryMap("id").values());
-        pluginObj.put("name", req.queryMap("name").values());
+        int versionCount = Parse.availablePluginsCount(id);
+
+        pluginObj.put("id", id);
+        pluginObj.put("name", req.queryMap("name").values()[0]);
         pluginObj.put("type", "custom");
-        pluginObj.put("description", req.queryMap("description").values());
-        pluginObj.put("helpUrl", req.queryMap("helpUrl").values());
-        pluginObj.put("markerClass", req.queryMap("markerClass").values());
-        pluginObj.put("screenshotUrl", req.queryMap("screenshotUrl").values());
-        pluginObj.put("vendor", req.queryMap("vendor").values());
+        pluginObj.put("description", req.queryMap("description").values()[0]);
+        pluginObj.put("helpUrl", req.queryMap("helpUrl").values()[0]);
+        pluginObj.put("markerClass", req.queryMap("markerClass").values()[0]);
+        pluginObj.put("screenshotUrl", req.queryMap("screenshotUrl").values()[0]);
+        pluginObj.put("vendor", req.queryMap("vendor").values()[0]);
 
-        if(httpRequest.isPluginVersionExist(Arrays.toString(req.queryMap("id").values()), Arrays.toString(req.queryMap("version").values()))){
-            pluginObj.put("versionCount", 0);
+        if(httpRequest.isPluginVersionExist(id, version)){
+            pluginObj.put("version_count", versionCount);
         }else{
             pluginObj.put("version_count", versionCount + 1);
         }
+        Parse.addPluginDataToDB(pluginObj);
 
-        metaDataObj.put("id", req.queryMap("id").values());
-        metaDataObj.put("version", req.queryMap("version").values());
-        metaDataObj.put("downloadUrl", req.queryMap("version").values());
-        metaDataObj.put("libs", req.queryMap("version").values());
+        metaDataObj.put("id", id);
+        metaDataObj.put("version", version);
 
-        List<FileItem> items = upload.parseRequest(req.raw());
-        return this.handleFileUpload(metaDataObj, items);
-    }
-
-    @Override
-    public String handleFileUpload(JSONObject metaDataObj, List<FileItem> items) {
         try{
-            for (FileItem item : items) {
-                if (!item.isFormField() && item.getFieldName().equals("pluginJar")) {
-                    String path = customPluginPath;
-                    copyFileItemToDirectory(item, path);
-                }else if(!item.isFormField() && item.getFieldName().equals("dependencyJars")){
-                    String path = libPath;
-                    copyFileItemToDirectory(item, path);
+            dependencyJars = req.raw().getParts();
+        } catch (ServletException | IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        boolean isUploadSuccess = this.handleFileUpload(dependencyJars, metaDataObj);
+        if(isUploadSuccess){
+            result = "200";
+        }else{
+            result = "500";
+        }
+        return result;
+    }
+    @Override
+    public boolean handleFileUpload(Collection<Part> uploadedFiles, JSONObject metaDataObj) throws IOException {
+        String url = "http://dummy.com/";
+        JSONObject depsObj = new JSONObject();
+        try{
+            for (Part uploadedFile : uploadedFiles) {
+                String fieldName = uploadedFile.getName();
+                if(fieldName != null && fieldName.equals("pluginJar")){
+                    copyFileItemToDirectory(uploadedFile, this.customPluginPath);
+                    metaDataObj.put("downloadUrl", uploadedFile.getSubmittedFileName());
+                } else if (fieldName != null && fieldName.equals("dependencyJars")) {
+                    String fileName = uploadedFile.getSubmittedFileName();
+                    String strippedName = fileName.substring(0, fileName.length() - 4);
+                    copyFileItemToDirectory(uploadedFile, this.libPath);
+                    depsObj.put(strippedName, url + fileName);
                 }
             }
-            return "200";
+            if(depsObj.length()>0)
+                metaDataObj.put("libs", depsObj.toString());
+
+            Parse.addMetaDataToDB(metaDataObj);
+            return true;
         }catch(Exception e){
             LOGGER.error("Exception occurred while Uploading custom plugins: ");
             e.printStackTrace();
-            return "500";
+            return false;
         }
     }
 
-    private void copyFileItemToDirectory(FileItem item, String path) {
-        String fileName = item.getName();
-        File file = new File(path + fileName);
-        try (InputStream inputStream = item.getInputStream()) {
-            Files.copy(inputStream, file.toPath());
+    private void copyFileItemToDirectory(Part uploadedItem, String path) {
+        String filename = uploadedItem.getSubmittedFileName();
+        String destination = path + File.separator + filename;
+        try (InputStream fileInputStream = uploadedItem.getInputStream()) {
+            Files.copy(fileInputStream, Paths.get(destination), StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
-            System.out.println("Error " + e);
+            e.printStackTrace();
         }
     }
 
