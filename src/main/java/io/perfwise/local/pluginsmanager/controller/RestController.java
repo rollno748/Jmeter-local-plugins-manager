@@ -5,7 +5,6 @@ import io.perfwise.local.pluginsmanager.service.PluginServiceImpl;
 import io.perfwise.local.pluginsmanager.service.UploadService;
 import io.perfwise.local.pluginsmanager.service.UploadServiceImpl;
 import io.perfwise.local.pluginsmanager.sqlite.SQLiteConnectionPool;
-import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.slf4j.Logger;
@@ -17,7 +16,6 @@ import java.io.File;
 import java.net.InetAddress;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
 import java.util.Properties;
 
 import static spark.Spark.*;

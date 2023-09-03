@@ -24,6 +24,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.*;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -38,6 +40,10 @@ public class HttpRequest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpRequest.class);
     private Properties props;
+    private final Path basePath;
+    private final String pluginsPath;
+    private final String dependenciesPath;
+    private final String customPluginsPath;
     private Connection conn;
     private static final HttpClient HTTP_CLIENT = HttpClients.createDefault();
     private static final int MAX_RETRIES = 10;
@@ -52,6 +58,10 @@ public class HttpRequest {
 
     public HttpRequest(Properties props){
         this.props = props;
+        this.basePath = Paths.get(props.getProperty("local.repo.path"));
+        this.pluginsPath = this.basePath.resolve("plugins").toString();
+        this.dependenciesPath = this.basePath.resolve("libs").toString();
+        this.customPluginsPath = this.basePath.resolve("custom").toString();
     }
 
     public static JSONArray get(String url) throws IOException {
@@ -120,13 +130,13 @@ public class HttpRequest {
                     String downloadUrl = verObj.getString("downloadUrl");
                     if(!downloadUrl.contains("%1$s.jar")){
                         metaDataObj.put("downloadUrl",  downloadUrl.substring(downloadUrl.lastIndexOf('/') + 1));
-                        fileDownloader(this.getProps().getProperty("local.repo.plugins.dir.path"), new URI(downloadUrl).toURL());
+                        fileDownloader(this.pluginsPath, new URI(downloadUrl).toURL());
                     }else{
                         List<String> availableVersions = this.getAvailableLibraryVersions(downloadUrl);
                         for (String ver : availableVersions){
                             String url = downloadUrl.replace("%1$s", ver);
                             metaDataObj.put("downloadUrl",  url.substring(url.lastIndexOf('/') + 1));
-                            fileDownloader(this.getProps().getProperty("local.repo.plugins.dir.path"), new URI(url).toURL());
+                            fileDownloader(this.pluginsPath, new URI(url).toURL());
                         }
                     }
                     if(verObj.has("libs")){
@@ -134,7 +144,7 @@ public class HttpRequest {
                         metaDataObj.put("libs", libsObject.toString());
                         for (String lib : libsObject.keySet()) {
                             String libUrl = libsObject.getString(lib);
-                            fileDownloader(this.getProps().getProperty("local.repo.dependencies.dir.path"), new URI(libUrl).toURL());
+                            fileDownloader(this.dependenciesPath, new URI(libUrl).toURL());
                         }
                     }
                 }
@@ -156,20 +166,20 @@ public class HttpRequest {
                 String downloadUrl = verObj.getString("downloadUrl");
                 if(!downloadUrl.contains("%1$s.jar")){
                     metaDataObj.put("downloadUrl",  downloadUrl.substring(downloadUrl.lastIndexOf('/') + 1));
-                    fileDownloader(this.getProps().getProperty("local.repo.plugins.dir.path"), new URI(downloadUrl).toURL());
+                    fileDownloader(this.pluginsPath, new URI(downloadUrl).toURL());
                 }else{
                     List<String> availableVersions = this.getAvailableLibraryVersions(downloadUrl);
                     for (String ver : availableVersions){
                         String url = downloadUrl.replace("%1$s", ver);
                         metaDataObj.put("downloadUrl",  url.substring(url.lastIndexOf('/') + 1));
-                        fileDownloader(this.getProps().getProperty("local.repo.plugins.dir.path"), new URI(url).toURL());
+                        fileDownloader(this.pluginsPath, new URI(url).toURL());
                     }
                 }
                if(verObj.has("libs")){
                     JSONObject libsObject = verObj.getJSONObject("libs");
                     for (String lib : libsObject.keySet()) {
                         String libUrl = libsObject.getString(lib);
-                        fileDownloader(this.getProps().getProperty("local.repo.dependencies.dir.path"), new URI(libUrl).toURL());
+                        fileDownloader(this.dependenciesPath, new URI(libUrl).toURL());
                     }
                    metaDataObj.put("libs", libsObject);
                 }
