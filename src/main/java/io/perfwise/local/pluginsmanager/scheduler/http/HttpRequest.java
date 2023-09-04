@@ -104,7 +104,7 @@ public class HttpRequest {
                     ioEx.printStackTrace();
                 }
 
-                LOGGER.info("{} downloaded successfully!", file);
+                LOGGER.debug("{} downloaded successfully!", file);
             }
         }catch(UnknownHostException uhe){
             LOGGER.info(String.format("Unable to resolve hostname %s \nException trace %s", url, uhe));
@@ -151,41 +151,6 @@ public class HttpRequest {
                 this.updatePluginMetadataInfo(metaDataObj);
                 LOGGER.info("Downloaded {} plugin - version {}", pluginObject.getString("id"), version);
             }
-        }
-        this.updatePluginInfoInDB(pluginObject, "public");
-    }
-
-    public void downloadPlugins(JSONObject pluginObject) throws URISyntaxException, IOException {
-        JSONObject metaDataObj = new JSONObject();
-        metaDataObj.put("id", pluginObject.getString("id"));
-        JSONObject versionObj = pluginObject.getJSONObject("versions");
-        for (String version : versionObj.keySet()) {
-            metaDataObj.put("version", version);
-            JSONObject verObj = versionObj.getJSONObject(version);
-            if(!verObj.isNull("downloadUrl")){
-                String downloadUrl = verObj.getString("downloadUrl");
-                if(!downloadUrl.contains("%1$s.jar")){
-                    metaDataObj.put("downloadUrl",  downloadUrl.substring(downloadUrl.lastIndexOf('/') + 1));
-                    fileDownloader(this.pluginsPath, new URI(downloadUrl).toURL());
-                }else{
-                    List<String> availableVersions = this.getAvailableLibraryVersions(downloadUrl);
-                    for (String ver : availableVersions){
-                        String url = downloadUrl.replace("%1$s", ver);
-                        metaDataObj.put("downloadUrl",  url.substring(url.lastIndexOf('/') + 1));
-                        fileDownloader(this.pluginsPath, new URI(url).toURL());
-                    }
-                }
-               if(verObj.has("libs")){
-                    JSONObject libsObject = verObj.getJSONObject("libs");
-                    for (String lib : libsObject.keySet()) {
-                        String libUrl = libsObject.getString(lib);
-                        fileDownloader(this.dependenciesPath, new URI(libUrl).toURL());
-                    }
-                   metaDataObj.put("libs", libsObject);
-                }
-            }
-            this.updatePluginMetadataInfo(metaDataObj);
-            LOGGER.info("Downloaded {} plugin - version {}", pluginObject.getString("id"), version);
         }
         this.updatePluginInfoInDB(pluginObject, "public");
     }
@@ -341,9 +306,9 @@ public class HttpRequest {
 
             int rowsInserted = preparedStatement.executeUpdate();
             if (rowsInserted > 0) {
-                System.out.println("Data inserted successfully!");
+                LOGGER.debug("Data inserted for {} - successfully", metadataModel.getId());
             } else {
-                System.out.println("Failed to insert data.");
+                LOGGER.debug("Failed to insert data for {}", metadataModel.getId());
             }
             preparedStatement.close();
         }catch (SQLException | InterruptedException e){
@@ -389,9 +354,9 @@ public class HttpRequest {
 
             int rowsInserted = preparedStatement.executeUpdate();
             if (rowsInserted > 0) {
-                System.out.println("Data inserted successfully!");
+                LOGGER.debug("Data inserted for {} - successfully", pluginModel.getString("id"));
             } else {
-                System.out.println("Failed to insert data.");
+                LOGGER.debug("Failed to insert data for {}", pluginModel.getString("id"));
             }
             preparedStatement.close();
         }catch (SQLException | InterruptedException e){
@@ -422,9 +387,9 @@ public class HttpRequest {
 
             int rowsInserted = preparedStatement.executeUpdate();
             if (rowsInserted > 0) {
-                System.out.println("Data inserted successfully!");
+                LOGGER.debug("Data inserted for {} - successfully", pluginModel.getId());
             } else {
-                System.out.println("Failed to insert data.");
+                LOGGER.debug("Failed to insert data for {}", pluginModel.getId());
             }
             preparedStatement.close();
         }catch (SQLException | InterruptedException e){

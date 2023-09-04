@@ -2,6 +2,8 @@ package io.perfwise.local.pluginsmanager.model;
 
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.json.JSONObject;
+
 public class MetadataModel {
     @JsonProperty("id")
     private String id;

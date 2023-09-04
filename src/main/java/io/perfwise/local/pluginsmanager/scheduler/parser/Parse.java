@@ -57,7 +57,7 @@ public class Parse {
 
     public static void downloadAllPlugins(JSONArray jmeterRepoJson) throws URISyntaxException, IOException {
         for (int i = 0; i < jmeterRepoJson.length(); i++) {
-            httpRequest.downloadPlugins(jmeterRepoJson.getJSONObject(i));
+            httpRequest.downloadMissingPlugins(jmeterRepoJson.getJSONObject(i));
         }
     }
 
