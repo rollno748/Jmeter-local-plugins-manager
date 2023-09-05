@@ -107,6 +107,12 @@ public class RestController {
                         "</div></body></html>";
             });
 
+            get("/dashboard", (req, res) -> {
+                res.type("text/html");
+                res.redirect("/dashboard.html");
+                return null;
+            });
+
             get("/upload", (req, res) -> {
                 res.type("text/html");
                 res.redirect("/");
