@@ -239,7 +239,7 @@ public class HttpRequest {
 
         JSONObject libraryObj = new JSONObject();
         try{
-            if(conn == null){
+            if(conn == null || conn.isClosed()){
                 conn = SQLiteConnectionPool.getConnection();
             }
             PreparedStatement preparedStatement = conn.prepareStatement(SELECT_METADATA_BY_ID);
@@ -294,7 +294,7 @@ public class HttpRequest {
     public void updatePluginMetadataInfo(JSONObject metaDataObj) {
         MetadataModel metadataModel = new Gson().fromJson(String.valueOf(metaDataObj), MetadataModel.class);
         try{
-            if(conn == null){
+            if(conn == null || conn.isClosed()){
                 conn = SQLiteConnectionPool.getConnection();
             }
 
@@ -319,7 +319,7 @@ public class HttpRequest {
     public boolean isPluginVersionExist(String id, String version){
         int result = 0;
         try{
-            if(conn == null){
+           if(conn == null || conn.isClosed()){
                 conn = SQLiteConnectionPool.getConnection();
             }
             PreparedStatement preparedStatement = conn.prepareStatement(SELECT_PLUGIN_VERSION_METADATA);
@@ -337,7 +337,7 @@ public class HttpRequest {
 
     public void updateCustomPluginInfoInDB(JSONObject pluginModel) {
         try{
-            if(conn == null){
+           if(conn == null || conn.isClosed()){
                 conn = SQLiteConnectionPool.getConnection();
             }
 
@@ -370,7 +370,7 @@ public class HttpRequest {
         PluginModel pluginModel = new Gson().fromJson(String.valueOf(pluginObject), PluginModel.class);
 
         try{
-            if(conn == null){
+            if(conn == null || conn.isClosed()){
                 conn = SQLiteConnectionPool.getConnection();
             }
 

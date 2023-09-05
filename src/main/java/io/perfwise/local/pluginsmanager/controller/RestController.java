@@ -72,8 +72,10 @@ public class RestController {
             init();
             awaitInitialization();
             loadRestApiServices();
-            LOGGER.info(String.format("Local Plugins manager - REST services started :: http://%s:%s%s/",
+            LOGGER.info("##############################################################################");
+            LOGGER.info(String.format("Local Plugins manager - REST services started :: http://%s:%s%s/status",
                     InetAddress.getLocalHost().getHostAddress(), serverPort, uriPath));
+            LOGGER.info("##############################################################################");
         } catch (Exception e) {
             LOGGER.error("Local Plugins manager - REST services failed to start", e);
         }
@@ -90,7 +92,7 @@ public class RestController {
         path(RestController.uriPath, () -> {
             before("/*", (req, res) -> LOGGER.info("Received api call"));
 
-            get("/", (req, res) -> {
+            get("/status", (req, res) -> {
                 long uptimeMillis = System.currentTimeMillis() - startTime;
                 long uptimeSeconds = uptimeMillis / 1000;
                 long hours = uptimeSeconds / 3600;

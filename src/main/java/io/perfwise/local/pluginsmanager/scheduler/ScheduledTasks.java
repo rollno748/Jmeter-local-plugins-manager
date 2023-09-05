@@ -30,6 +30,7 @@ public class ScheduledTasks extends TimerTask {
             JSONArray pluginsArray = HttpRequest.get(props.getProperty("jmeter.plugins.url"));
 
             if(getAvailablePluginsCount(pluginsArray) == 0){
+                LOGGER.info("Initializing plugin download for the fresh setup : {} New Plugin(s) found to download.. ", pluginsArray.length());
                 Parse.downloadAllPlugins(pluginsArray);
             }else{
                 JSONArray missingPluginsList = Parse.getMissingPluginsNames(pluginsArray);

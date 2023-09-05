@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.InetAddress;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.sql.SQLException;
@@ -73,7 +74,9 @@ public class LocalPluginsManager {
             try(InputStream inputStream = LocalPluginsManager.class.getClassLoader().getResourceAsStream("config.properties")){
                 if (inputStream != null) {
                     props.load(inputStream);
-                    LOGGER.info("Properties load :: Success");
+                    LOGGER.info("################################################");
+                    LOGGER.info("         Properties load :: Success");
+                    LOGGER.info("################################################");
                 } else {
                     LOGGER.error("Resource 'config.properties' not found");
                     System.exit(1);
