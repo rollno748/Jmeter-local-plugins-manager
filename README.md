@@ -8,7 +8,7 @@ In situations where specific hosts lack internet access, this tool enables the t
 1. Java 8 or above
 
 ## Creating Properties file
-create an properties file with the below contents.
+create a properties file with the below contents.
 
 ```sh
 server.port=2222
@@ -44,10 +44,10 @@ local.repo.path=C:\\Temp\\plugins-manager\\
 
 ## How to Set up
 
-* Download the Latest release from here
+* Download the Latest release from [here](https://github.com/rollno748/Jmeter-local-plugins-manager/tags)
 * Create `configuration.properties` file
 * Run the JAR (java -jar jmeter-local-plugins-manager-2.0.jar -c configuration.properties)
-* Go to the JMeter installed directory and set jpgc.repo.address (this should be the local plugins manager API) in the jmeter.properties
+* Go to the JMeter installed directory and set `jpgc.repo.address` (this should be the local plugins manager API) in the jmeter.properties
 
 ## Features
 1. Downloads plugins and their associated dependent libraries to local storage.
