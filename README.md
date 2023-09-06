@@ -1,52 +1,73 @@
-# Jmeter-local-plugins-manager
-Intranet Plugin Manager for JMeter - which downloads the plugins from internet periodically.
+# JMeter local plugins manager
+Intranet Plugin Manager for JMeter - Periodically downloads plugins from the internet.
 
-## Motive 
-Some organization will not have/provide access to internet on certain hosts - This will enable the team to create an own server to manage the plugins
-
-## Features
-1. Downloads the plugins, and it's associated dependent libraries to local storage.
-2. Stores all the information to SQLITE DB.
-3. Enables a UI to upload custom plugin which are restricted to share outside of organization.
-4. Creates and exposes modified API with to get the Plugins info for Jmeter Plugin manager 
-5. Easily configurable scheduler to check for the newly available plugins/versions in the market.
-
+## Motive
+In situations where specific hosts lack internet access, this tool enables the team to establish a dedicated server for managing plugins within the organization.
 
 ## Required Components
 1. Java 8 or above
 
-## Architecture
+## Creating Properties file
+create an properties file with the below contents.
 
+```sh
+server.port=2222
+server.uri.path=/v1
 
-## How to Set up
+# Scheduler interval (in ms)
+scheduler.interval=86400000
 
-* Download the source code and compile or Download the releases
-* Create config to override configuration for application 
-* Run the jar (java -jar jmeter-local-plugins-manager-2.0.jar)
+# DB Connection Pool configuration
+db.min.threads=2
+db.max.threads=10
+db.timeout.secs=300
 
+# External APIs
+jmeter.plugins.url=https://jmeter-plugins.org/repo/
+mvn.repo.url=https://mvnrepository.com/search?q=
+
+# Directory Configs
+local.repo.path=/app/plugins-manager/
+
+# Uncomment the below if you are running this on Windows
+local.repo.path=C:\\Temp\\plugins-manager\\
+```
 
 ## Available APIs
 
 | Service            | HTTP Method | URI                                     |
 |:-------------------|:-----------:|:----------------------------------------|
 | App Running Status |     GET     | http://<hostname/IP>:\<port>/v1/        |
-| Upload Plugin      |     GET     | http://<hostname/IP>:\<port>/v1/upload  |
 | Get Plugins        |     GET     | http://<hostname/IP>:\<port>/v1/plugins |
+| Upload Custom Plugin      |     GET     | http://<hostname/IP>:\<port>/v1/upload  |
 
+
+## How to Set up
+
+* Download the Latest release from here
+* Create `configuration.properties` file
+* Run the JAR (java -jar jmeter-local-plugins-manager-2.0.jar -c configuration.properties)
+* Go to the JMeter installed directory and set jpgc.repo.address (this should be the local plugins manager API) in the jmeter.properties
+
+## Features
+1. Downloads plugins and their associated dependent libraries to local storage.
+2. Stores all information in an SQLITE DB.
+3. Provides a UI to upload custom plugins restricted to sharing within the organization.
+4. Creates and exposes a modified API to retrieve plugin info for JMeter Plugin Manager.
+5. Easily configurable scheduler to check for newly available plugins/versions in the market.
 
 ## Uploading Custom plugin
 ![Custom Upload Form](/img/upload-form.jpg)
 
-
 ## How it works ?
 
-* Its acts as an independent server which polls plugins manager for update (which is configurable) 
-* It creates the required directories to store the plugins and its dependencies to the local 
-* It checks the permission on the local directories before storing the files
-* Exposes 3 APIs in intranet 
- - Public plugins api
- - Custom Plugins api
- - Merged (Public and Custom) Plugins api
+* Acts as an independent server that polls the plugins manager for updates (configurable).
+* Creates the required directories to store plugins and their dependencies locally.
+* Checks permissions on local directories before storing files.
+* Exposes 3 APIs in the intranet:
+    - Public plugins API
+    - Custom Plugins API
+    - Merged (Public and Custom) Plugins API
 
 ## Tools used
 - Spark java framework
