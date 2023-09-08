@@ -19,4 +19,11 @@ public class PluginServiceImpl implements PluginService {
     public JSONArray getCustomPlugins() {
         return Parse.getCustomPlugins();
     }
+
+    @Override
+    public JSONArray getPluginTable() {
+        return Parse.getPluginsTableData();
+    }
+
+
 }

@@ -52,6 +52,7 @@ public class HttpRequest {
     private static final String INSERT_PLUGIN_INFO = "INSERT INTO plugins (id, name, type, description, helpUrl, markerClass, screenshotUrl, vendor, versions_count) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
     private static final String SELECT_PLUGIN_VERSION_METADATA = "SELECT COUNT(*) AS COUNT FROM METADATA WHERE ID = ? AND VERSION = ?";
     private static final String SELECT_PLUGINS = "SELECT ID, NAME, DESCRIPTION, HELPURL, MARKERCLASS, SCREENSHOTURL, VENDOR FROM plugins";
+    private static final String SELECT_PLUGINS_TABLE_DATA = "SELECT ID, NAME, TYPE, DESCRIPTION, HELPURL, MARKERCLASS, SCREENSHOTURL, VENDOR, VERSIONS_COUNT FROM plugins";
     private static final String SELECT_PLUGINS_WITH_FILTER = "SELECT ID, NAME, DESCRIPTION, HELPURL, MARKERCLASS, SCREENSHOTURL, VENDOR FROM plugins WHERE type = ?";
     private static final String SELECT_METADATA_BY_ID = "SELECT ID, VERSION, DOWNLOADURL, LIBS FROM metadata WHERE ID = ?";
 
@@ -224,6 +225,43 @@ public class HttpRequest {
 
     public JSONArray getCustomPlugins() {
         return fetchPluginsFromLocalDB(SELECT_PLUGINS_WITH_FILTER, "custom");
+    }
+
+    public JSONArray getAllPluginsTableData() {
+        return fetchAllPluginsTableData();
+    }
+
+    private JSONArray fetchAllPluginsTableData() {
+        JSONArray jsonArray = new JSONArray();
+        try{
+            if(conn == null || conn.isClosed()){
+                conn = SQLiteConnectionPool.getConnection();
+            }
+            PreparedStatement preparedStatement = conn.prepareStatement(HttpRequest.SELECT_PLUGINS_TABLE_DATA);
+            ResultSet rs = preparedStatement.executeQuery();
+
+            while (rs.next()) {
+                JSONObject pluginObject = new JSONObject();
+                JSONObject libraryObj;
+
+                pluginObject.put("id", rs.getString("id"));
+                pluginObject.put("name", rs.getString("name"));
+                pluginObject.put("type", rs.getString("type"));
+                pluginObject.put("description", rs.getString("description"));
+                pluginObject.put("helpUrl", rs.getString("helpUrl"));
+                pluginObject.put("markerClass", rs.getString("markerClass"));
+                pluginObject.put("screenshotUrl", rs.getString("screenshotUrl"));
+                pluginObject.put("vendor", rs.getString("vendor"));
+                pluginObject.put("versions_count", rs.getString("versions_count"));
+                jsonArray.put(pluginObject);
+            }
+            preparedStatement.close();
+        }catch(SQLException | InterruptedException e){
+            LOGGER.error("Exception occurred while fetching plugins information");
+        } finally {
+            SQLiteConnectionPool.releaseConnection(conn);
+        }
+        return jsonArray;
     }
 
     private JSONObject getDependentLibraryObj(String id, String type) throws UnknownHostException {
@@ -404,5 +442,4 @@ public class HttpRequest {
     public void setProps(Properties props) {
         this.props = props;
     }
-
 }

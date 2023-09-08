@@ -1,0 +1,30 @@
+#tableInput {
+  background-image: url('./../ico/search.png');
+  background-position: 10px 12px;
+  background-repeat: no-repeat;
+  width: 97%;
+  font-size: 16px;
+  padding: 12px 20px 12px 40px;
+  border: 1px solid #ddd;
+  margin-bottom: 12px;
+}
+
+#pluginTable {
+  border-collapse: collapse;
+  width: 100%;
+  border: 1px solid #ddd;
+  font-size: 18px;
+}
+
+#pluginTable th, #pluginTable td {
+  text-align: left;
+  padding: 12px;
+}
+
+#pluginTable tr {
+  border-bottom: 1px solid #ddd;
+}
+
+#pluginTable tr.header, #pluginTable tr:hover {
+  background-color: #f1f1f1;
+}

@@ -107,6 +107,12 @@ public class RestController {
                         "</div></body></html>";
             });
 
+            get("/dashboard", (req, res) -> {
+                res.type("text/html");
+                res.redirect("/dashboard.html");
+                return null;
+            });
+
             get("/upload", (req, res) -> {
                 res.type("text/html");
                 res.redirect("/");
@@ -127,6 +133,13 @@ public class RestController {
                 } else {
                     return "Invalid plugin type.";
                 }
+            });
+
+            get("/plugins-table", (req, res) -> {
+                res.type("application/json");
+                String type = req.queryParams("type");
+                PluginService pluginService = new PluginServiceImpl();
+                return pluginService.getPluginTable();
             });
 
             post("/upload", (req, res) -> {
