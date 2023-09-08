@@ -42,23 +42,32 @@ db.timeout.secs=300
 jmeter.plugins.url=https://jmeter-plugins.org/repo/
 mvn.repo.url=https://mvnrepository.com/search?q=
 
+# DB Connection Pool configuration
+db.min.threads=2
+db.max.threads=10
+db.timeout.secs=300
+
+# External APIs
+jmeter.plugins.url=https://jmeter-plugins.org/repo/
+mvn.repo.url=https://mvnrepository.com/search?q=
+
 # Directory Configs
 local.repo.path=/app/plugins-manager/
 
 # Uncomment the below if you are running this on Windows
-local.repo.path=C:\\Temp\\plugins-manager\\
+# local.repo.path=C:\\Temp\\plugins-manager\\
 ```
-
+ 
 ## How to Set up
 
 * Download the Latest release from [here](https://github.com/rollno748/Jmeter-local-plugins-manager/tags)
 * Create `configuration.properties` file
-* Run the JAR (java -jar jmeter-local-plugins-manager-<version>.jar -c configuration.properties)
+* Run the JAR (java -jar jmeter-local-plugins-manager-2.0.jar -c configuration.properties)
 * Go to the JMeter installed directory and set `jpgc.repo.address` (this should be the local plugins manager API) in the jmeter.properties
-
 
 ## Uploading Custom plugin
 ![Custom Upload Form](/img/upload-form.jpg)
+
 
 ## How it works ?
 
@@ -69,7 +78,6 @@ local.repo.path=C:\\Temp\\plugins-manager\\
     - Public plugins API
     - Custom Plugins API
     - Merged (Public and Custom) Plugins API
-
 
 ## Detailed Instructions
 
