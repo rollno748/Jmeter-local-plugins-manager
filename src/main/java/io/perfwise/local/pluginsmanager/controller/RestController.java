@@ -135,6 +135,13 @@ public class RestController {
                 }
             });
 
+            get("/plugins-table", (req, res) -> {
+                res.type("application/json");
+                String type = req.queryParams("type");
+                PluginService pluginService = new PluginServiceImpl();
+                return pluginService.getPluginTable();
+            });
+
             post("/upload", (req, res) -> {
                 req.attribute("org.eclipse.jetty.multipartConfig", new MultipartConfigElement("/temp"));
                 UploadService uploadService = new UploadServiceImpl(this.customPluginsPath, this.libPath);

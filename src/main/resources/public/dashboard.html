@@ -1,8 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Custom Plugin Form</title>
-<!--    <link rel="stylesheet" href="dashboard/styles.css">-->
+    <title>Plugins Table</title>
+    <link rel="stylesheet" href="assets/css/dashboard.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
 </head>
 <body>
 <a id="fork-me" href="https://github.com/rollno748/Jmeter-local-plugins-manager" target="_blank">
@@ -19,8 +21,19 @@
     </nav>
 </header>
 <div class="table">
-    <h1>Plugin Dashboard</h1>
+    <input type="text" id="tableInput" onkeyup="myFunction()" placeholder="Search">
+
+    <table id="pluginTable">
+        <tr class="header">
+            <th style="width:20%;">ID</th>
+            <th style="width:20%;">Name</th>
+            <th style="width:20%;">Type</th>
+            <th style="width:20%;">Vendor</th>
+            <th style="width:20%;">Versions Count</th>
+        </tr>
+    </table>
 </div>
-<!--<script src="dashboard/script.js"></script>-->
+<script src="assets/js/dashboard.js"></script>
+<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
 </body>
 </html>

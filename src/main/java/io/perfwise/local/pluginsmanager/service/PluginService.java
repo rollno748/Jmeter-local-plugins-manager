@@ -6,4 +6,5 @@ public interface PluginService {
     JSONArray getAllPlugins();
     JSONArray getPublicPlugins();
     JSONArray getCustomPlugins();
+    JSONArray getPluginTable();
 }
