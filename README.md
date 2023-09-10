@@ -38,10 +38,6 @@ db.min.threads=2
 db.max.threads=10
 db.timeout.secs=300
 
-# DB Connection Pool configuration
-db.min.threads=2
-db.max.threads=10
-db.timeout.secs=300
 
 # External APIs
 jmeter.plugins.url=https://jmeter-plugins.org/repo/
