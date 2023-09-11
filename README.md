@@ -1,5 +1,5 @@
 # JMeter local plugins manager
-Intranet Plugin Manager for JMeter - Periodically downloads plugins from the internet.
+Intranet Plugin Manager server for JMeter - Periodically downloads plugins from the internet.
 
 ## Motive
 In situations where specific hosts lack internet access, this tool enables the team to establish a dedicated server for managing plugins within the organization.
@@ -22,6 +22,8 @@ In situations where specific hosts lack internet access, this tool enables the t
 | Get Plugins           |     GET     | http://<hostname/IP>:\<port>/v1/plugins   |
 | Upload Custom Plugin  |     GET     | http://<hostname/IP>:\<port>/v1/upload    |
 | View Plugins in table |     GET     | http://<hostname/IP>:\<port>/v1/dashboard |
+| Get Public Plugins    |     GET     | http://<hostname/IP>:\<port>/v1/plugins?type=public|
+| Get Custom Plugins    |     GET     | http://<hostname/IP>:\<port>/v1/plugins?type=custom|
 
 ## Creating Properties file
 create a properties file with the below contents.
