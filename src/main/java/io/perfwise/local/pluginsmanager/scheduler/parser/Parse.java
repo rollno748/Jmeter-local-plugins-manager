@@ -59,6 +59,7 @@ public class Parse {
         for (int i = 0; i < jmeterRepoJson.length(); i++) {
             httpRequest.downloadMissingPlugins(jmeterRepoJson.getJSONObject(i));
         }
+        LOGGER.info("Downloaded all the available plugins from the market");
     }
 
     public static int getLocalPluginCount(JSONArray pluginsArray) throws SQLException, InterruptedException {
@@ -128,6 +129,7 @@ public class Parse {
         for (int i = 0; i < missingPluginsList.length(); i++) {
             httpRequest.downloadMissingPlugins(missingPluginsList.getJSONObject(i));
         }
+        LOGGER.info("Downloaded all the missing plugins from the market");
     }
 
     public static HttpRequest getHttpRequest() {
