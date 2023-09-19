@@ -2,8 +2,9 @@ package io.perfwise.local.pluginsmanager.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class PluginModel {
+import java.util.List;
 
+public class PluginModel {
     @JsonProperty("description")
     private String description;
 
@@ -27,6 +28,9 @@ public class PluginModel {
 
     @JsonProperty("vendor")
     private String vendor;
+
+    @JsonProperty("componentClasses")
+    private List<String> componentClasses;
 
     @JsonProperty("versions_count")
     private int versions_count;
@@ -84,6 +88,14 @@ public class PluginModel {
     }
     public void setVendor(String vendor) {
         this.vendor = vendor;
+    }
+
+    public List<String> getComponentClasses() {
+        return componentClasses;
+    }
+
+    public void setComponentClasses(List<String> componentClasses) {
+        this.componentClasses = componentClasses;
     }
 
     public String getType() {

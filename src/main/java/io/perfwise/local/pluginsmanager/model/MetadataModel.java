@@ -7,6 +7,10 @@ public class MetadataModel {
     private String id;
     @JsonProperty("version")
     private String version;
+    @JsonProperty("changes")
+    private String changes;
+    @JsonProperty("depends")
+    private String depends;
     @JsonProperty("downloadUrl")
     private String downloadUrl;
     @JsonProperty("libs")
@@ -40,6 +44,22 @@ public class MetadataModel {
 
     public String getLibs() {
         return libs;
+    }
+
+    public String getChanges() {
+        return changes;
+    }
+
+    public void setChanges(String changes) {
+        this.changes = changes;
+    }
+
+    public String getDepends() {
+        return depends;
+    }
+
+    public void setDepends(String depends) {
+        this.depends = depends;
     }
 
     public void setLibs(String libs) {

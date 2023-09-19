@@ -75,7 +75,7 @@ local.repo.path=/app/plugins-manager/
 
 ## Detailed Instructions
 
-* Detailed instructions is available at [Medium](https://rollno748.medium.com/creating-your-own-jmeter-plugin-manager-a-comprehensive-guide-aaa57021dda9)
+  * Detailed instructions is available at [Medium](https://rollno748.medium.com/creating-your-own-jmeter-plugin-manager-a-comprehensive-guide-aaa57021dda9)
 
 
 ## Tools used
