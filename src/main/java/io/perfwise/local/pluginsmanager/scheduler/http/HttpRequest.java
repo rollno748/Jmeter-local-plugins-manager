@@ -1,5 +1,8 @@
 package io.perfwise.local.pluginsmanager.scheduler.http;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import io.perfwise.local.pluginsmanager.model.MetadataModel;
 import io.perfwise.local.pluginsmanager.model.PluginModel;
@@ -194,7 +197,10 @@ public class HttpRequest {
                 pluginObject.put("vendor", rs.getString("vendor"));
                 libraryObj = this.getDependentLibraryObj(rs.getString("id"), type);
                 pluginObject.put("versions", libraryObj);
-                pluginObject.put("componentClasses", rs.getString("componentClasses"));
+                String componentClasses = rs.getString("componentClasses");
+                if(componentClasses != null){
+                    pluginObject.put("componentClasses", new JSONArray(componentClasses));
+                }
                 jsonArray.put(pluginObject);
             }
             preparedStatement.close();
@@ -290,6 +296,11 @@ public class HttpRequest {
 
             while (rs.next()) {
                 JSONObject versionsObj = new JSONObject();
+                String depends = rs.getString("depends");
+                versionsObj.put("changes", rs.getString("changes"));
+                if(depends != null){
+                    versionsObj.put("depends", new JSONArray(depends));
+                }
                 versionsObj.put("downloadUrl", pluginUrl + rs.getString("downloadUrl"));
                 if (rs.getString("libs") != null){
                     versionsObj.put("libs", processLibs(rs.getString("libs"), libUrl));
