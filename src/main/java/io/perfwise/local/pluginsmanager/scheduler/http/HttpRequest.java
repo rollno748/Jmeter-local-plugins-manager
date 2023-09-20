@@ -1,8 +1,5 @@
 package io.perfwise.local.pluginsmanager.scheduler.http;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import io.perfwise.local.pluginsmanager.model.MetadataModel;
 import io.perfwise.local.pluginsmanager.model.PluginModel;
@@ -192,7 +189,8 @@ public class HttpRequest {
                 pluginObject.put("name", rs.getString("name"));
                 pluginObject.put("description", rs.getString("description"));
                 pluginObject.put("helpUrl", rs.getString("helpUrl"));
-                pluginObject.put("markerClass", rs.getString("markerClass"));
+                String markerClass = rs.getString("markerClass");
+                pluginObject.put("markerClass", (markerClass == null || markerClass.isEmpty()) ? JSONObject.NULL : markerClass);
                 pluginObject.put("screenshotUrl", rs.getString("screenshotUrl"));
                 pluginObject.put("vendor", rs.getString("vendor"));
                 libraryObj = this.getDependentLibraryObj(rs.getString("id"), type);
