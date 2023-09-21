@@ -62,7 +62,7 @@ public class Parse {
         LOGGER.info("Downloaded all the available plugins from the market");
     }
 
-    public static int getLocalPluginCount(JSONArray pluginsArray) throws SQLException, InterruptedException {
+    public static int getLocalPluginCount() throws SQLException, InterruptedException {
         int localStoreCount = 0;
         conn = SQLiteConnectionPool.getConnection();
 
@@ -80,7 +80,7 @@ public class Parse {
         return localStoreCount;
     }
 
-    public static void addPluginDataToDB(JSONObject pluginObj) throws SQLException, InterruptedException {
+    public static void addPluginDataToDB(JSONObject pluginObj) {
         String type = "custom";
         httpRequest.updateCustomPluginInfoInDB(pluginObj);
     }
