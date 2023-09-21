@@ -29,7 +29,7 @@ public class ScheduledTasks extends TimerTask {
         try {
             JSONArray pluginsArray = HttpRequest.get(props.getProperty("jmeter.plugins.url"));
 
-            if(getAvailablePluginsCount(pluginsArray) == 0){
+            if(getAvailablePluginsCount() == 0){
                 LOGGER.info("Initializing plugin download for the fresh setup : {} New Plugin(s) found to download.. ", pluginsArray.length());
                 Parse.downloadAllPlugins(pluginsArray);
             }else{
@@ -50,8 +50,8 @@ public class ScheduledTasks extends TimerTask {
         LOGGER.debug("Checking for plugin updates from Plugins manager");
     }
 
-    private int getAvailablePluginsCount(JSONArray pluginsArray) throws SQLException, InterruptedException{
-        int localStoreCount = Parse.getLocalPluginCount(pluginsArray);
+    private int getAvailablePluginsCount() throws SQLException, InterruptedException{
+        int localStoreCount = Parse.getLocalPluginCount();
         setLocalDBPluginsCount(localStoreCount);
         return localStoreCount;
     }

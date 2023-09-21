@@ -48,8 +48,8 @@ public class HttpRequest {
     private static final long RETRY_INTERVAL_MS = 60000;
     private static final String INSERT_METADATA_INFO = "INSERT INTO metadata (id, version, changes, depends, downloadUrl, libs) VALUES (?, ?, ?, ?, ?, ?)";
     private static final String INSERT_PLUGIN_INFO = "INSERT INTO plugins (id, name, type, description, helpUrl, markerClass, screenshotUrl, vendor, componentClasses, versions_count) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-    private static final String SELECT_PLUGINS_WITH_FILTER = "SELECT ID, NAME, DESCRIPTION, HELPURL, MARKERCLASS, SCREENSHOTURL, VENDOR, COMPONENTCLASSES FROM plugins WHERE type = ?";
-    private static final String SELECT_PLUGINS_WITHOUT_FILTER = "SELECT ID, NAME, DESCRIPTION, HELPURL, MARKERCLASS, SCREENSHOTURL, VENDOR, COMPONENTCLASSES FROM plugins";
+    private static final String SELECT_PLUGINS_WITH_FILTER = "SELECT ID, NAME, TYPE, DESCRIPTION, HELPURL, MARKERCLASS, SCREENSHOTURL, VENDOR, COMPONENTCLASSES FROM plugins WHERE type = ?";
+    private static final String SELECT_PLUGINS_WITHOUT_FILTER = "SELECT ID, NAME, TYPE, DESCRIPTION, HELPURL, MARKERCLASS, SCREENSHOTURL, VENDOR, COMPONENTCLASSES FROM plugins";
     private static final String SELECT_PLUGINS_TABLE_DATA = "SELECT ID, NAME, TYPE, DESCRIPTION, HELPURL, MARKERCLASS, SCREENSHOTURL, VENDOR, COMPONENTCLASSES, VERSIONS_COUNT FROM plugins";
     private static final String SELECT_METADATA_BY_ID = "SELECT ID, VERSION, CHANGES, DEPENDS, DOWNLOADURL, LIBS FROM metadata WHERE ID = ?";
     private static final String SELECT_PLUGIN_VERSION_METADATA = "SELECT COUNT(*) AS COUNT FROM METADATA WHERE ID = ? AND VERSION = ?";
@@ -134,10 +134,9 @@ public class HttpRequest {
                     }else{
                         List<String> availableVersions = this.getAvailableLibraryVersions(downloadUrl);
                         for (String ver : availableVersions){
-                            String url = downloadUrl.replace("%1$s", ver);
-                            metaDataObj.put("downloadUrl",  url.substring(url.lastIndexOf('/') + 1));
-                            fileDownloader(this.pluginsPath, new URI(url).toURL());
+                            fileDownloader(this.pluginsPath, new URI(ver).toURL());
                         }
+                        metaDataObj.put("downloadUrl",  getLibraryName(downloadUrl)+"-%1$s.jar");
                     }
                     if(verObj.has("libs")){
                         JSONObject libsObject = verObj.getJSONObject("libs");
@@ -159,13 +158,17 @@ public class HttpRequest {
     }
 
     private List<String> getAvailableLibraryVersions(String downloadUrl) {
+        return fetchAvailableVersions(getLibraryName(downloadUrl));
+    }
+
+    private String getLibraryName(String downloadUrl) {
         String libName = null;
         Pattern pattern = Pattern.compile("jmeter/(?<libName>[^/]+)/%\\d[^/]*");
         Matcher matcher = pattern.matcher(downloadUrl);
         if(matcher.find()) {
             libName = matcher.group("libName");
         }
-        return fetchAvailableVersions(libName);
+        return libName;
     }
 
     public JSONArray fetchPluginsFromLocalDB(String query, String type) {
@@ -197,7 +200,7 @@ public class HttpRequest {
                 pluginObject.put("markerClass", (markerClass == null || markerClass.isEmpty()) ? JSONObject.NULL : markerClass);
                 pluginObject.put("screenshotUrl", rs.getString("screenshotUrl"));
                 pluginObject.put("vendor", rs.getString("vendor"));
-                libraryObj = this.getDependentLibraryObj(rs.getString("id"), type);
+                libraryObj = this.getDependentLibraryObj(rs.getString("id"), rs.getString("type"));
                 pluginObject.put("versions", libraryObj);
                 String componentClasses = rs.getString("componentClasses");
                 if(componentClasses != null){
@@ -225,10 +228,6 @@ public class HttpRequest {
     }
 
     public JSONArray getAllPlugins() {
-        return fetchPluginsFromLocalDB(SELECT_PLUGINS_WITHOUT_FILTER, "all");
-    }
-
-    private JSONArray getCombinedPlugins() {
         return fetchPluginsFromLocalDB(SELECT_PLUGINS_WITHOUT_FILTER, "all");
     }
 
@@ -334,13 +333,12 @@ public class HttpRequest {
         Document doc;
         List<String> versions = new ArrayList<>();
         try{
-            //mavenRepoUrl
-            doc = Jsoup.connect("https://repo1.maven.org/maven2/org/apache/jmeter/" + libName).get();
-            Elements links = doc.select("a[href]");
+            doc = Jsoup.connect(mavenRepoUrl + libName).get();
+            Elements links = doc.select("a[title]");
             for(Element link : links) {
                 String href = link.attr("href");
-                if(href.contains(libName + "-")) {
-                    String version = href.substring(href.lastIndexOf("-") + 1, href.lastIndexOf(".jar"));
+                if(!href.contains("xml")){
+                    String version = mavenRepoUrl + libName + "/" + href + libName + "-" + href.substring(0, href.lastIndexOf('/')) + ".jar";
                     versions.add(version);
                 }
             }

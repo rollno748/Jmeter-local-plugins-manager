@@ -38,7 +38,6 @@ public class RestController {
     }
 
     public enum Plugins {
-        DEFAULT,
         PUBLIC,
         CUSTOM
     }
@@ -137,7 +136,6 @@ public class RestController {
 
             get("/plugins-table", (req, res) -> {
                 res.type("application/json");
-                String type = req.queryParams("type");
                 PluginService pluginService = new PluginServiceImpl();
                 return pluginService.getPluginTable();
             });
