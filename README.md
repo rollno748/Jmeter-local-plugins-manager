@@ -43,7 +43,7 @@ db.timeout.secs=300
 
 # External APIs
 jmeter.plugins.url=https://jmeter-plugins.org/repo/
-mvn.repo.url=https://mvnrepository.com/search?q=
+mvn.repo.url=mvn.repo.url=https://repo1.maven.org/maven2/org/apache/jmeter/
 
 # Directory Configs
 local.repo.path=/app/plugins-manager/
