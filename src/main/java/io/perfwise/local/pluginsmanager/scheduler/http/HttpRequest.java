@@ -26,10 +26,7 @@ import java.io.InputStream;
 import java.net.*;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -44,17 +41,18 @@ public class HttpRequest {
     private final String pluginsPath;
     private final String dependenciesPath;
     private final String customPluginsPath;
+    private final String mavenRepoUrl;
     private Connection conn;
     private static final HttpClient HTTP_CLIENT = HttpClients.createDefault();
     private static final int MAX_RETRIES = 10;
     private static final long RETRY_INTERVAL_MS = 60000;
     private static final String INSERT_METADATA_INFO = "INSERT INTO metadata (id, version, changes, depends, downloadUrl, libs) VALUES (?, ?, ?, ?, ?, ?)";
     private static final String INSERT_PLUGIN_INFO = "INSERT INTO plugins (id, name, type, description, helpUrl, markerClass, screenshotUrl, vendor, componentClasses, versions_count) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-    private static final String SELECT_PLUGIN_VERSION_METADATA = "SELECT COUNT(*) AS COUNT FROM METADATA WHERE ID = ? AND VERSION = ?";
-    private static final String SELECT_PLUGINS = "SELECT ID, NAME, DESCRIPTION, HELPURL, MARKERCLASS, SCREENSHOTURL, VENDOR, COMPONENTCLASSES FROM plugins";
-    private static final String SELECT_PLUGINS_TABLE_DATA = "SELECT ID, NAME, TYPE, DESCRIPTION, HELPURL, MARKERCLASS, SCREENSHOTURL, VENDOR, COMPONENTCLASSES, VERSIONS_COUNT FROM plugins";
     private static final String SELECT_PLUGINS_WITH_FILTER = "SELECT ID, NAME, DESCRIPTION, HELPURL, MARKERCLASS, SCREENSHOTURL, VENDOR, COMPONENTCLASSES FROM plugins WHERE type = ?";
+    private static final String SELECT_PLUGINS_WITHOUT_FILTER = "SELECT ID, NAME, DESCRIPTION, HELPURL, MARKERCLASS, SCREENSHOTURL, VENDOR, COMPONENTCLASSES FROM plugins";
+    private static final String SELECT_PLUGINS_TABLE_DATA = "SELECT ID, NAME, TYPE, DESCRIPTION, HELPURL, MARKERCLASS, SCREENSHOTURL, VENDOR, COMPONENTCLASSES, VERSIONS_COUNT FROM plugins";
     private static final String SELECT_METADATA_BY_ID = "SELECT ID, VERSION, CHANGES, DEPENDS, DOWNLOADURL, LIBS FROM metadata WHERE ID = ?";
+    private static final String SELECT_PLUGIN_VERSION_METADATA = "SELECT COUNT(*) AS COUNT FROM METADATA WHERE ID = ? AND VERSION = ?";
 
 
     public HttpRequest(Properties props){
@@ -63,6 +61,7 @@ public class HttpRequest {
         this.pluginsPath = this.basePath.resolve("plugins").toString();
         this.dependenciesPath = this.basePath.resolve("libs").toString();
         this.customPluginsPath = this.basePath.resolve("custom").toString();
+        this.mavenRepoUrl = props.getProperty("mvn.repo.url");
     }
 
     public static JSONArray get(String url) throws IOException {
@@ -169,22 +168,27 @@ public class HttpRequest {
         return fetchAvailableVersions(libName);
     }
 
-    public JSONArray fetchPluginsFromLocalDB(String query, String type){
+    public JSONArray fetchPluginsFromLocalDB(String query, String type) {
         JSONArray jsonArray = new JSONArray();
+        ResultSet rs;
+        PreparedStatement preparedStatement= null;
+        Statement statement = null;
         try{
             if(conn == null || conn.isClosed()){
                 conn = SQLiteConnectionPool.getConnection();
             }
-            PreparedStatement preparedStatement = conn.prepareStatement(query);
-            if(type != null){
+            if(!type.equals("all")){
+                preparedStatement = conn.prepareStatement(query);
                 preparedStatement.setString(1, type);
+                rs = preparedStatement.executeQuery();
+            }else{
+                statement = conn.createStatement();
+                rs = statement.executeQuery(query);
             }
-            ResultSet rs = preparedStatement.executeQuery();
 
             while (rs.next()) {
                 JSONObject pluginObject = new JSONObject();
                 JSONObject libraryObj;
-
                 pluginObject.put("id", rs.getString("id"));
                 pluginObject.put("name", rs.getString("name"));
                 pluginObject.put("description", rs.getString("description"));
@@ -201,29 +205,31 @@ public class HttpRequest {
                 }
                 jsonArray.put(pluginObject);
             }
-            preparedStatement.close();
+            rs.close();
         }catch(SQLException | InterruptedException e){
             LOGGER.error("Exception occurred while fetching plugins information");
         } catch (UnknownHostException e) {
             throw new RuntimeException(e);
         } finally {
+            try{
+                if(preparedStatement!=null)
+                    preparedStatement.close();
+                if(statement!=null)
+                    statement.close();
+            }catch (SQLException e){
+                LOGGER.error("SQL Exception ", e);
+            }
             SQLiteConnectionPool.releaseConnection(conn);
         }
         return jsonArray;
     }
 
     public JSONArray getAllPlugins() {
-        JSONArray publicPluginArray = getPublicPlugins();
-        JSONArray customPluginArray = getCustomPlugins();
-
-        for(Object obj: customPluginArray){
-            publicPluginArray.put((JSONObject) obj);
-        }
-        return publicPluginArray;
+        return fetchPluginsFromLocalDB(SELECT_PLUGINS_WITHOUT_FILTER, "all");
     }
 
     private JSONArray getCombinedPlugins() {
-        return fetchPluginsFromLocalDB(SELECT_PLUGINS, "all");
+        return fetchPluginsFromLocalDB(SELECT_PLUGINS_WITHOUT_FILTER, "all");
     }
 
     public JSONArray getPublicPlugins() {
@@ -240,17 +246,18 @@ public class HttpRequest {
 
     private JSONArray fetchAllPluginsTableData() {
         JSONArray jsonArray = new JSONArray();
+        PreparedStatement preparedStatement;
+        ResultSet rs;
+
         try{
             if(conn == null || conn.isClosed()){
                 conn = SQLiteConnectionPool.getConnection();
             }
-            PreparedStatement preparedStatement = conn.prepareStatement(HttpRequest.SELECT_PLUGINS_TABLE_DATA);
-            ResultSet rs = preparedStatement.executeQuery();
+            preparedStatement = conn.prepareStatement(HttpRequest.SELECT_PLUGINS_TABLE_DATA);
+            rs = preparedStatement.executeQuery();
 
             while (rs.next()) {
                 JSONObject pluginObject = new JSONObject();
-                JSONObject libraryObj;
-
                 pluginObject.put("id", rs.getString("id"));
                 pluginObject.put("name", rs.getString("name"));
                 pluginObject.put("type", rs.getString("type"));
@@ -276,7 +283,7 @@ public class HttpRequest {
 
         String host = InetAddress.getLocalHost().getHostAddress();
         String libUrl = String.format("http://%s:%s/%s/", host, props.getProperty("server.port"), "libs");
-        String pluginUrl = null;
+        String pluginUrl;
         if(type.equals("public")){
             pluginUrl = String.format("http://%s:%s/%s/", host, props.getProperty("server.port"), "plugins");
         }else{
@@ -324,9 +331,10 @@ public class HttpRequest {
     }
 
     private List<String> fetchAvailableVersions(String libName) {
-        Document doc = null;
+        Document doc;
         List<String> versions = new ArrayList<>();
         try{
+            //mavenRepoUrl
             doc = Jsoup.connect("https://repo1.maven.org/maven2/org/apache/jmeter/" + libName).get();
             Elements links = doc.select("a[href]");
             for(Element link : links) {
@@ -392,8 +400,7 @@ public class HttpRequest {
            if(conn == null || conn.isClosed()){
                 conn = SQLiteConnectionPool.getConnection();
             }
-            //"CREATE TABLE plugins (id TEXT PRIMARY KEY, name TEXT, type TEXT, description TEXT, helpUrl TEXT, markerClass TEXT, screenshotUrl TEXT, vendor TEXT, componentClasses TEXT, versions_count INTEGER)";
-           //id, name, type, description, helpUrl, markerClass, screenshotUrl, vendor, componentClasses, versions_count) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
             PreparedStatement preparedStatement = conn.prepareStatement(INSERT_PLUGIN_INFO);
             preparedStatement.setString(1, pluginModel.getString("id"));
             preparedStatement.setString(2, pluginModel.getString("name"));
@@ -403,7 +410,7 @@ public class HttpRequest {
             preparedStatement.setString(6, pluginModel.getString("markerClass"));
             preparedStatement.setString(7, pluginModel.getString("screenshotUrl"));
             preparedStatement.setString(8, pluginModel.getString("vendor"));
-            preparedStatement.setString(9, pluginModel.getString("componentClasses"));
+            preparedStatement.setString(9, pluginModel.has("componentClasses") ? pluginModel.getString("componentClasses") : null);
             preparedStatement.setDouble(10, pluginModel.getDouble("version_count"));
 
             int rowsInserted = preparedStatement.executeUpdate();
